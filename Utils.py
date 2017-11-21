@@ -42,5 +42,9 @@ SUB = "-"
 ONE = "1"
 ZERO = "0"
 
+# ERRORS MESSAGES:
+WRONG_COMMAND_TYPE_MSG = "This function should get only 'C_PUSH' or 'C_POP' " \
+                         "as command type"
+
 # MORE:
 NEW_LINE = "\n"

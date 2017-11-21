@@ -49,10 +49,18 @@ class CodeWriter:
             self.__output.write(M_REG + EQUAL + M_REG + ADD + ONE + NEW_LINE)
 
         elif command == C_POP:
-            most_top_index = SP
+
+            # Decrements SP and extracts the topmost value of the stack
+            self.__output.write(A_INST_PREFIX + SP + NEW_LINE)
+            self.__output.write(M_REG + EQUAL + M_REG + SUB + ONE + NEW_LINE)
+            self.__output.write(D_REG + EQUAL + M_REG + NEW_LINE)
+
+            # Writes the extracted value to the wanted segment:
+            self.__output.write(A_INST_PREFIX + str(add_base_index) + NEW_LINE)
+            self.__output.write(M_REG + EQUAL + D_REG + NEW_LINE)
+
         else:
-            pass
-            # TODO: Raise exception? Or just do nothing
+            raise ValueError(WRONG_COMMAND_TYPE_MSG)
 
     def close(self):
         """
@@ -68,7 +76,7 @@ def main():
     """
     with open("file", "w+") as f:
         gustav = CodeWriter(f)
-        gustav.writePushPop("C_PUSH", "static", 17)
+        gustav.writePushPop("C_PO", "static", 17)
 
 
 if __name__ == "__main__":
