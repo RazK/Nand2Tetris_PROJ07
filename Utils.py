@@ -17,12 +17,30 @@ THIS = "R3"
 THAT = "R4"
 
 SEGMENTS = {
-    "argument" : 0,
-    "local" : 0,
-    "static" : 0,
-    "constant" : 0,
-    "this" : 0,
-    "that" : 0,
-    "pointer" : 0,
-    "temp" : 0
+    "argument": 0,
+    "local": 0,
+    "static": 0,
+    "constant": 0,
+    "this": 0,
+    "that": 0,
+    "pointer": 0,
+    "temp": 0
 }
+
+# INSTRUCTIONS
+A_INST_PREFIX = "@"
+
+# REGISTERS
+M_REG = "M"
+A_REG = "A"
+D_REG = "D"
+
+# ARITHMETIC:
+EQUAL = "="
+ADD = "+"
+SUB = "-"
+ONE = "1"
+ZERO = "0"
+
+# MORE:
+NEW_LINE = "\n"
