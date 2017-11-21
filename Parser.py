@@ -1,17 +1,8 @@
-# Command Types
-C_ARITHMETIC = "C_ARITHMETIC"
-C_PUSH = "C_PUSH"
-C_POP = "C_POP"
-C_LABEL = "C_LABEL"
-C_GOTO = "C_GOTO"
-C_IF = "C_IF"
-C_FUNCTION = "C_FUNCTION"
-C_RETURN = "C_RETURN"
-C_CALL = "C_CALL"
+from Utils import *
 
 
 class Parser:
-    def __init__(self, vm_file):
+    def __init__(self, infile):
         """
         Opens the input file/stream and gets ready to parse it.
         :param filename: An open hack assembly file descriptor (reading only)
@@ -67,6 +58,7 @@ def main():
     Tests for the Parser module
     """
     pass
+
 
 if __name__ == "__main__":
     main()
