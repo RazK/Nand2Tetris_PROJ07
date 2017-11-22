@@ -37,7 +37,7 @@ class Parser:
         """
         Returns the first argument of the current command.
         In the case of C_ARITHMETIC, the command itself (add, sub, etc.) is
-        returned.
+        returned
         Should not be called if the current command is C_RETURN.
         :return: string (Type of the current command)
         """
