@@ -126,7 +126,7 @@ class CodeWriter:
         # TODO: Noy: to add something for < > =
 
         else:
-            raise ValueError(NOT_AN_OPPERATION_MSG)
+            raise ValueError(NOT_AN_OPERATION_MSG)
 
     def close(self):
         """
