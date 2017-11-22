@@ -10,6 +10,9 @@ C_FUNCTION = "C_FUNCTION"
 C_RETURN = "C_RETURN"
 C_CALL = "C_CALL"
 
+COMMANDS_ARITHMETIC = ["add", "sub", "neq", "eq", "gt", "lt", "and", "or",
+                       "not"]
+
 SP = "R0"
 LCL = "R1"
 ARG = "R2"

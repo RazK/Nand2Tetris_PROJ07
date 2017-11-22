@@ -1,5 +1,13 @@
 from Utils import *
 
+# Line structure: COMMAND [ARG1] [ARG2]
+# Examples:
+#   add             (COMMAND = "add",   ARG1 = "",      ARG2 = "")
+#   goto loop       (COMMAND = "goto",  ARG1 = "loop",  ARG2 = "")
+#   push local 3    (COMMAND = "push",  ARG1 = "local", ARG2 = "3")
+COMMAND = 0
+ARG1 = 1
+ARG2 = 2
 
 class Parser:
     def __init__(self, infile):
@@ -12,7 +20,7 @@ class Parser:
     def hasMoreCommands(self):
         """
         Are there more commands in the input?
-        :return: boolean (True if more commands, False otherwise)
+        :return: Boolean (True if more commands, False otherwise)
         """
         pass
 
@@ -31,7 +39,8 @@ class Parser:
         C_ARITHMETIC is returned for all the arithmetic commands.
         :return: type of the current VM command.
         """
-        pass
+        if self.__parsedCommand[COMMAND] in 
+
 
     def arg1(self):
         """
