@@ -24,8 +24,13 @@ SEGMENTS = {
     "this": 0,
     "that": 0,
     "pointer": 0,
-    "temp": 0
+    "temp": 5
 }
+
+# INTERNAL CALCULATIONS:
+TEMP = "temp"
+TEMP_0 = 0
+TEMP_1 = 1
 
 # INSTRUCTIONS
 A_INST_PREFIX = "@"
@@ -36,6 +41,21 @@ A_REG = "A"
 D_REG = "D"
 
 # ARITHMETIC:
+
+BINARY_ARITHMETIC = {
+    "sum": "+",
+    "sub": "-",
+    "and": "&",
+    "or": "|"
+}
+
+UNARY_ARITHMETIC = {
+    "neg": "!",
+    "not": "-"
+}
+
+
+# TODO: Noy: Do I need this duplicate?
 EQUAL = "="
 ADD = "+"
 SUB = "-"
@@ -43,8 +63,9 @@ ONE = "1"
 ZERO = "0"
 
 # ERRORS MESSAGES:
-WRONG_COMMAND_TYPE_MSG = "This function should get only 'C_PUSH' or 'C_POP' " \
+WRONG_COMMAND_TYPE_MSG = "This method should get only 'C_PUSH' or 'C_POP' " \
                          "as command type"
+NOT_AN_OPPERATION_MSG = "This method gets only: 'sub, "
 
 # MORE:
 NEW_LINE = "\n"
