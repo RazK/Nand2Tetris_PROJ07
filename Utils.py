@@ -65,7 +65,7 @@ ZERO = "0"
 # ERRORS MESSAGES:
 WRONG_COMMAND_TYPE_MSG = "This method should get only 'C_PUSH' or 'C_POP' " \
                          "as command type"
-NOT_AN_OPPERATION_MSG = "This method gets only: 'sub, "
+NOT_AN_OPPERATION_MSG = "Operation is not supported."
 
 # MORE:
 NEW_LINE = "\n"
