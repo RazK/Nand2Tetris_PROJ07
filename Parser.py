@@ -52,6 +52,8 @@ class Parser:
         Should be called only if hasMoreCommands() is true.
         Initially there is no current command.
         """
+        # TODO: Noy to Raz: I think that this method is unnecessary,
+        # what do you think?
         pass
 
     def commandType(self):
