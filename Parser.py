@@ -36,10 +36,10 @@ class Parser:
         # Determines if the line is a command or not:
         while line is NEW_LINE or line.startswith(COMMENT_PREFIX):
 
+            line = self.__file.readline()
+
             if line == EOF:
                 return False
-
-            line = self.__file.readline()
 
         # A command was found!
         self.__curr_command = line
@@ -120,6 +120,7 @@ def main():
     """
     parsi = Parser(
         "C:/Users/Noy/Desktop/project7/Nand2Tetris_PROJ07/file.vm.txt")
+    print(parsi.hasMoreCommands())
     print(parsi.hasMoreCommands())
 
 
