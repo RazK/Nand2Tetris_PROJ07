@@ -1,7 +1,10 @@
 from Utils import *
 
+CONSTANT_SEG_NAME = "constant"
+
 
 class CodeWriter:
+
     def __init__(self, outfile):
         """
         Open the output file/stream and gets ready to write into it.
@@ -45,6 +48,9 @@ class CodeWriter:
             self.__output.write(M_REG + EQUAL + M_REG + ADD + ONE + NEW_LINE)
 
         elif command == C_POP:
+
+            if segment == CONSTANT_SEG_NAME:
+                raise ValueError(POP_FROM_CONSTANT_MSG)
 
             # Decrements SP and extracts the topmost value of the stack:
             self.__output.write(A_INST_PREFIX + SP + NEW_LINE)
@@ -107,7 +113,7 @@ class CodeWriter:
         :param operation: eq, gt, lt.
         :return:
         """
-        # TODO: Noy: Ask Raz.
+        # TODO: Noy: handle in the next stage.
         pass
 
     def write_arithmetic(self, command):
@@ -123,7 +129,7 @@ class CodeWriter:
         elif command in UNARY_ARITHMETIC:
             self.__handle_unary(UNARY_ARITHMETIC.get(command))
 
-        # TODO: Noy: to add something for < > =
+        # TODO: Noy: to add something for < > = (in next stage)
 
         else:
             raise ValueError(NOT_AN_OPERATION_MSG)

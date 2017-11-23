@@ -43,6 +43,7 @@ COMMANDS = {
     "call": C_CALL
 }
 
+DEFAULT_COMMAND = None
 
 # INTERNAL CALCULATIONS:
 TEMP = "temp"
@@ -83,7 +84,10 @@ NOT_AN_OPERATION_MSG = "Operation is not supported."
 COMMAND_NOT_SUPPORTED_MSG = "Command is not supported."
 ARG_ASKED_FOR_RETURN_MSG = "The return command has no arguments."
 NO_SECOND_ARG_MSG = "Command has no second argument."
+POP_FROM_CONSTANT_MSG = "Popping to the constant segment is not supported."
 
 # MORE:
 NEW_LINE = "\n"
 SPACE = " "
+COMMENT_PREFIX = "//"
+EOF = ""
