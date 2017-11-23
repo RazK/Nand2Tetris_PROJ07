@@ -16,7 +16,7 @@ class Parser:
         :param filename: An open hack assembly file descriptor (reading only)
         """
         self.__file = open(infile, "r")
-        self.__curr_command = "label END"
+        self.__curr_command = "push temp 1"
 
     def hasMoreCommands(self):
         """
@@ -98,7 +98,7 @@ def main():
     Tests for the Parser module
     """
     parsi = Parser("C:/Users/Noy/Desktop/project7/Nand2Tetris_PROJ07/file.vm.txt")
-    print(parsi.arg2())
+    print(parsi.commandType())
 
 
 if __name__ == "__main__":
