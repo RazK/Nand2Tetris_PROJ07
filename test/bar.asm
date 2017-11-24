@@ -1,0 +1,45 @@
+// test\bar\1.vm
+@1
+D=M
+@R0
+A=M
+M=D
+@R0
+M=M+1
+@2
+D=M
+@R0
+A=M
+M=D
+@R0
+M=M+1
+// test\bar\2.vm
+@1
+D=M
+@R0
+A=M
+M=D
+@R0
+M=M+1
+@2
+D=M
+@R0
+A=M
+M=D
+@R0
+M=M+1
+// test\bar\3.vm
+@1
+D=M
+@R0
+A=M
+M=D
+@R0
+M=M+1
+@2
+D=M
+@R0
+A=M
+M=D
+@R0
+M=M+1
