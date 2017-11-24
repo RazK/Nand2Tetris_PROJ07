@@ -1,5 +1,7 @@
 from Utils import *
 
+CONSTANT_SEG_NAME = "constant"
+
 
 class CodeWriter:
     def __init__(self, outfile):
@@ -78,6 +80,13 @@ class CodeWriter:
         if command == C_PUSH:
             self.__writePush(address)
         elif command == C_POP:
+            # TODO: RazK: Probably there's a better place in Utils to define
+            # 'CONSTANT_SEG_NAME'
+            if segment == CONSTANT_SEG_NAME:
+                # Can't pop from constant segment
+                # TODO: RazK: Ask noy why specifically this check,
+                # what about other segments? What about push to constant?
+                raise ValueError(POP_FROM_CONSTANT_MSG)
             self.__writePop(address)
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
@@ -127,7 +136,7 @@ class CodeWriter:
         :param operation: eq, gt, lt.
         :return:
         """
-        # TODO: Noy: Ask Raz.
+        # TODO: Noy: handle in the next stage.
         pass
 
     def write_arithmetic(self, command):
@@ -143,7 +152,7 @@ class CodeWriter:
         elif command in UNARY_ARITHMETIC:
             self.__handle_unary(UNARY_ARITHMETIC.get(command))
 
-        # TODO: Noy: to add something for < > =
+        # TODO: Noy: to add something for < > = (in next stage)
 
         else:
             raise ValueError(NOT_AN_OPERATION_MSG)

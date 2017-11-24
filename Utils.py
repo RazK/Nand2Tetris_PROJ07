@@ -21,6 +21,26 @@ COMMANDS = {
     "call": C_CALL
 }
 COMMANDS_WITH_2_ARGS = [C_PUSH, C_POP, C_FUNCTION, C_CALL]
+DEFAULT_COMMAND = None
+
+# ARITHMETIC:
+COMMANDS_ARITHMETIC = ["add", "sub", "neq", "eq", "gt", "lt", "and", "or",
+                       "not"]
+BINARY_ARITHMETIC = {
+    "add": "+",
+    "sub": "-",
+    "and": "&",
+    "or": "|"
+}
+UNARY_ARITHMETIC = {
+    "neg": "!",
+    "not": "-"
+}
+ASSIGN = "="
+ADD = "+"
+SUB = "-"
+ONE = "1"
+ZERO = "0"
 
 # MEMORY ALIASES:
 SP = "R0"
@@ -50,23 +70,6 @@ M_REG = "M"
 A_REG = "A"
 D_REG = "D"
 
-# ARITHMETIC:
-BINARY_ARITHMETIC = {
-    "add": "+",
-    "sub": "-",
-    "and": "&",
-    "or": "|"
-}
-UNARY_ARITHMETIC = {
-    "neg": "!",
-    "not": "-"
-}
-ASSIGN = "="
-ADD = "+"
-SUB = "-"
-ONE = "1"
-ZERO = "0"
-
 # ERRORS MESSAGES:
 WRONG_COMMAND_TYPE_MSG = "This method should get only 'C_PUSH' or 'C_POP' " \
                          "as command type."
@@ -74,10 +77,13 @@ NOT_AN_OPERATION_MSG = "Operation is not supported."
 COMMAND_NOT_SUPPORTED_MSG = "Command is not supported."
 ARG_ASKED_FOR_RETURN_MSG = "The return command has no arguments."
 NO_SECOND_ARG_MSG = "Command has no second argument."
+POP_FROM_CONSTANT_MSG = "Popping to the constant segment is not supported."
 
 # MORE:
 NEW_LINE = "\n"
 SPACE = " "
+COMMENT_PREFIX = "//"
+EOF = ""
 
 
 def getAddress(segment, index):
@@ -90,6 +96,7 @@ def getAddress(segment, index):
     """
     # TODO: RazK: Check parameters validity
     return str(SEGMENTS[segment] + index)
+
 
 # INTERNAL CALCULATIONS:
 TEMP = "temp"
