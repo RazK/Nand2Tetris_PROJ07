@@ -1,49 +1,44 @@
-from Utils import *
+from src.Nand2Tetris_PROJ07.Utils import *
 
-# Line structure: COMMAND [ARG1] [ARG2]
+# Comand Structure: OPERATION [ARG1] [ARG2]
 # Examples:
-#   add             (COMMAND = "add",   ARG1 = "",      ARG2 = "")
-#   goto loop       (COMMAND = "goto",  ARG1 = "loop",  ARG2 = "")
-#   push local 3    (COMMAND = "push",  ARG1 = "local", ARG2 = "3")
+#   add             (OPERATION = "add",   ARG1 = "",      ARG2 = "")
+#   goto loop       (OPERATION = "goto",  ARG1 = "loop",  ARG2 = "")
+#   push local 3    (OPERATION = "push",  ARG1 = "local", ARG2 = "3")
 
-COMMAND = 0
+OPERATION = 0
 ARG1 = 1
 ARG2 = 2
 
 
 class Parser:
-
     def __init__(self, infile):
         """
-        Opens the input file/stream and gets ready to parse it.
-        :param filename: An open hack assembly file descriptor (reading only)
+        Gets ready to parse the infile.
+        :param infile: An open hack assembly file descriptor (reading only)
         """
-        self.__file = open(infile, "r")
+        self.__file = infile
         self.__curr_command = DEFAULT_COMMAND
+        self.__next_command = self.__file.readline()
+        self.advance()
+
+    def __shouldSkipLine(self):
+        """
+        Returns if the current line should be skipped, either because it's a
+        comment line (starts with '//') or because it only contained tabs
+        and spaces.
+        :return: True if line should be skipped, False otherwise
+        """
+        # TODO: RazK: test this
+        stripped = self.__curr_command.strip(SPACE + TAB)
+        return stripped == NEW_LINE or stripped.startswith(COMMENT_PREFIX)
 
     def hasMoreCommands(self):
         """
         Are there more commands in the input?
         :return: boolean (True if more commands, False otherwise)
         """
-
-        line = self.__file.readline()
-
-        # Test if there are no more lines of input:
-        if line == EOF:
-            return False
-
-        # Determines if the line is a command or not:
-        while line is NEW_LINE or line.startswith(COMMENT_PREFIX):
-
-            line = self.__file.readline()
-
-            if line == EOF:
-                return False
-
-        # A command was found!
-        self.__curr_command = line
-        return True
+        return self.__curr_command != EOF
 
     def advance(self):
         """
@@ -52,26 +47,31 @@ class Parser:
         Should be called only if hasMoreCommands() is true.
         Initially there is no current command.
         """
-        # TODO: Noy to Raz: I think that this method is unnecessary,
-        # what do you think?
-        pass
+        do = True
+        while (do):
+            self.__curr_command = self.__next_command
+            self.__next_command = self.__file.readline()
 
-    def commandType(self):
+            # Skip empty lines and comments
+            do = (self.hasMoreCommands() and self.__shouldSkipLine())
+
+            # TODO: RazK: Add mechanism to count instructions for jumps and
+            # labels
+
+    def getOperation(self):
         """
-        Returns the type of the current VM command.
+        Returns the type of the current VM command (the operation).
         C_ARITHMETIC is returned for all the arithmetic commands.
-        :return: type of the current VM command.
+        :return: operation - type of the current VM command.
         """
-        # Extracts the command's prefix:
-        split_command = self.__curr_command.split(SPACE)
-        command_prefix = split_command[COMMAND]
+        # Extracts the operation part of the command:
+        op = self.__curr_command.split(SPACE)[OPERATION].strip()
 
         # Classify the command:
-        if command_prefix in COMMANDS:
-            return COMMANDS[command_prefix]
+        if op in C_OPERATIONS:
+            return C_OPERATIONS[op]
 
-        elif self.__curr_command in BINARY_ARITHMETIC \
-                or self.__curr_command in UNARY_ARITHMETIC:
+        elif op in OPERATIONS_ARITHMETIC:
             return C_ARITHMETIC
 
         else:
@@ -85,16 +85,14 @@ class Parser:
         Should not be called if the current command is C_RETURN.
         :return: string (Type of the current command)
         """
-        if self.commandType() is C_RETURN:
+        if self.getOperation() is C_RETURN:
             raise ValueError(ARG_ASKED_FOR_RETURN_MSG)
 
-        elif self.commandType() is C_ARITHMETIC:
+        elif self.getOperation() is C_ARITHMETIC:
             return self.__curr_command
 
         # Else, return the first argument of the command:
-        slice_command = self.__curr_command.split(SPACE)
-        first_arg = slice_command[ARG1]
-        return first_arg
+        return self.__curr_command.split(SPACE)[ARG1]
 
     def arg2(self):
         """
@@ -105,13 +103,14 @@ class Parser:
         """
 
         # Tests if the command has a second argument:
-        if self.commandType() not in COMMANDS_WITH_2_ARGS:
+        if self.getOperation() not in OPERATIONS_WITH_2_ARGS:
             raise ValueError(NO_SECOND_ARG_MSG)
 
         # Extracts the second argument:
-        slice_command = self.__curr_command.split(SPACE)
-        second_arg = slice_command[ARG2]
-        return second_arg
+        #TODO: RazK: What if the command can have 2 arguments but only has
+        # 1? for example: 'push 1' doesn't have a second argument but I
+        # think it's valid
+        return self.__curr_command.split(SPACE)[ARG2]
 
 
 def main():
