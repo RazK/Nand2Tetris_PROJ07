@@ -1,7 +1,4 @@
-from Utils import *
-
-CONSTANT_SEG_NAME = "constant"
-
+from src.Nand2Tetris_PROJ07.Utils import *
 
 class CodeWriter:
     def __init__(self, outfile):
@@ -10,7 +7,7 @@ class CodeWriter:
         """
         self.__output = outfile
 
-    def set_file_name(self, file_name):
+    def setFileName(self, file_name):
         # TODO: RazK, Noy: Decide on a naming convention for methods,
         # either 'someFuncDoesWhat' or 'some_func_does_what', and refactor all
         # code to stick with it.
@@ -21,12 +18,16 @@ class CodeWriter:
         """
         pass
 
-    def __writeLine(self, line):
+    def __writeLine(self, line, comment_suffix=None):
         """
         Writes the given line to the output file, terminated by newline.
         :param line: Line to write to the output file.
         """
-        self.__output.write("{}\n".format(line))
+        if comment_suffix != None:
+            suffix = " // {}".format(comment_suffix)
+        else:
+            suffix = ''
+        self.__output.write("{}{}\n".format(line, suffix))
 
     def __writePush(self, address):
         """
@@ -65,33 +66,38 @@ class CodeWriter:
         self.__writeLine(LOAD_A + address)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
-    def __writePushPop(self, command, segment, index):
+    def writeComment(self, comment):
+        """
+        Writes a comment line to the assembly.
+        :param comment: comment to write to the assembly.
+        """
+        self.__writeLine("// {}".format(comment))
+
+    def writePushPop(self, operation, segment, index):
         """
         Writes the assembly code that is the translation of the given
-        command, where the command is either C_PUSH or C_POP.
-        :param command: either C_PUSH or C_POP
+        operation, where the operation is either C_PUSH or C_POP.
+        :param operation: either C_PUSH or C_POP
         :param segment: either ARG, THAT, THIS,
         :param index:
         """
         # Get address to Push/Pop
-        address = getAddress(segment, index)
+        address = getAddress(segment, int(index.strip()))
 
         # Write the appropriate command
-        if command == C_PUSH:
+        if operation == C_PUSH:
             self.__writePush(address)
-        elif command == C_POP:
+        elif operation == C_POP:
             # TODO: RazK: Probably there's a better place in Utils to define
             # 'CONSTANT_SEG_NAME'
             if segment == CONSTANT_SEG_NAME:
-                # Can't pop from constant segment
-                # TODO: RazK: Ask noy why specifically this check,
-                # what about other segments? What about push to constant?
+                # Can't pop to constant segment
                 raise ValueError(POP_FROM_CONSTANT_MSG)
             self.__writePop(address)
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
 
-    def __handle_binary(self, operation):
+    def __handleBinary(self, operation):
         """
         Translates the operations: x+y, x-y, x&y, x|y to assembly, and writs
         to the output file.
@@ -112,7 +118,7 @@ class CodeWriter:
         # Pushes the result back to the topmost cell in the stack:
         self.__writePush(ADDRESS_TEMP_1)
 
-    def __handle_unary(self, operation):
+    def __handleUnary(self, operation):
         """
         Translates the operations: -x, !x to assembly, and writs
         to the output file.
@@ -129,7 +135,7 @@ class CodeWriter:
         # Pushes the result back to the stack:
         self.__writePush(ADDRESS_TEMP_0)
 
-    def __handle_jumps(self, operation):
+    def __handleJumps(self, operation):
         """
         Translates the operations: x=y, x>y, x<y to assembly, and writs
         to the output file.
@@ -139,18 +145,18 @@ class CodeWriter:
         # TODO: Noy: handle in the next stage.
         pass
 
-    def write_arithmetic(self, command):
+    def writeArithmetic(self, operation):
         """
         Writes the assembly code that is the translation of the given
-        arithmetic command.
-        :param command: The arithmetic command to be translated.
+        arithmetic operation.
+        :param operation: The arithmetic command to be translated.
         """
 
-        if command in BINARY_ARITHMETIC:
-            self.__handle_binary(BINARY_ARITHMETIC.get(command))
+        if operation in OPERATIONS_ARITHMETIC_BINARY:
+            self.__handleBinary(OPERATIONS_ARITHMETIC_BINARY[operation])
 
-        elif command in UNARY_ARITHMETIC:
-            self.__handle_unary(UNARY_ARITHMETIC.get(command))
+        elif operation in OPERATIONS_ARITHMETIC_UNARY:
+            self.__handleUnary(OPERATIONS_ARITHMETIC_UNARY[operation])
 
         # TODO: Noy: to add something for < > = (in next stage)
 
@@ -171,7 +177,7 @@ def main():
     """
     with open("file.asm", "w+") as f:
         gustav = CodeWriter(f)
-        gustav.write_arithmetic("neg")
+        gustav.writeArithmetic("neg")
         # gustav.writePushPop("C_POP", "static", 17)
 
 
