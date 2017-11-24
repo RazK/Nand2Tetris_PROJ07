@@ -8,9 +8,32 @@ C_IF = "C_IF"
 C_FUNCTION = "C_FUNCTION"
 C_RETURN = "C_RETURN"
 C_CALL = "C_CALL"
+OPERATIONS_WITH_2_ARGS = [C_PUSH, C_POP, C_FUNCTION, C_CALL]
 
-# COMMAND IDENTIFIERS:
-COMMANDS = {
+# PUSH POP OPERATIONS:
+OPERATIONS_PUSH_POP = [C_PUSH, C_POP]
+
+# ARITHMETIC OPERATIONS:
+OPERATIONS_ARITHMETIC_BINARY = {
+    "add": "+",
+    "sub": "-",
+    "and": "&",
+    "or": "|"
+}
+OPERATIONS_ARITHMETIC_UNARY = {
+    "neg": "-",
+    "not": "!"
+}
+OPERATIONS_ARITHMETIC = {**OPERATIONS_ARITHMETIC_BINARY,
+                         **OPERATIONS_ARITHMETIC_UNARY}
+ASSIGN = "="
+ADD = "+"
+SUB = "-"
+ONE = "1"
+ZERO = "0"
+
+# OTHER OPERATIONS:
+C_OPERATIONS = {
     "push": C_PUSH,
     "pop": C_POP,
     "goto": C_GOTO,
@@ -20,27 +43,6 @@ COMMANDS = {
     "if-goto": C_IF,
     "call": C_CALL
 }
-COMMANDS_WITH_2_ARGS = [C_PUSH, C_POP, C_FUNCTION, C_CALL]
-DEFAULT_COMMAND = None
-
-# ARITHMETIC:
-COMMANDS_ARITHMETIC = ["add", "sub", "neq", "eq", "gt", "lt", "and", "or",
-                       "not"]
-BINARY_ARITHMETIC = {
-    "add": "+",
-    "sub": "-",
-    "and": "&",
-    "or": "|"
-}
-UNARY_ARITHMETIC = {
-    "neg": "!",
-    "not": "-"
-}
-ASSIGN = "="
-ADD = "+"
-SUB = "-"
-ONE = "1"
-ZERO = "0"
 
 # MEMORY ALIASES:
 SP = "R0"
@@ -58,9 +60,10 @@ SEGMENTS = {
     "constant": 0,
     "this": 0,
     "that": 0,
-    "pointer": 0,
+    "pointer": 3,  # Memory Segments Mapping (Book page 118)
     "temp": 5
 }
+CONSTANT_SEG_NAME = "constant"
 
 # INSTRUCTIONS:
 LOAD_A = "@"
@@ -82,8 +85,10 @@ POP_FROM_CONSTANT_MSG = "Popping to the constant segment is not supported."
 # MORE:
 NEW_LINE = "\n"
 SPACE = " "
+TAB = "\t"
 COMMENT_PREFIX = "//"
 EOF = ""
+EMPTY_LINE = ''
 
 
 def getAddress(segment, index):
@@ -102,3 +107,4 @@ def getAddress(segment, index):
 TEMP = "temp"
 ADDRESS_TEMP_0 = getAddress(TEMP, 0)
 ADDRESS_TEMP_1 = getAddress(TEMP, 1)
+DEFAULT_COMMAND = None
