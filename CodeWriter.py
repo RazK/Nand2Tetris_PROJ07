@@ -9,6 +9,9 @@ class CodeWriter:
         self.__output = outfile
 
     def set_file_name(self, file_name):
+        # TODO: RazK, Noy: Decide on a naming convention for methods,
+        # either 'someFuncDoesWhat' or 'some_func_does_what', and refactor all
+        # code to stick with it.
         """
         Informs the code writer that the translation of a new VM file
         is started.
@@ -16,7 +19,49 @@ class CodeWriter:
         """
         pass
 
-    # For write_arithmetic's usage:
+    def __writeLine(self, line):
+        """
+        Writes the given line to the output file, terminated by newline.
+        :param line: Line to write to the output file.
+        """
+        self.__output.write("{}\n".format(line))
+
+    def __writePush(self, address):
+        """
+        Writes the assembly code that is the translation of the given push
+        command.
+        :param segment: either ARG, THAT, THIS,
+        :param index: index relative to the segment.
+        """
+        # Writes the translation into the output file:
+        self.__writeLine(LOAD_A + address)
+        self.__writeLine(D_REG + ASSIGN + M_REG)
+
+        # Enters the extracted value to the stack:
+        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(A_REG + ASSIGN + M_REG)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+
+        # Increments SP:
+        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)
+
+    def __writePop(self, address):
+        """
+        Writes the assembly code that is the translation of the given pop
+        command.
+        :param segment: either ARG, THAT, THIS,
+        :param index: index relative to the segment.
+        """
+        # Decrements SP and extracts the topmost value of the stack:
+        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)
+        self.__writeLine(A_REG + ASSIGN + M_REG)
+        self.__writeLine(D_REG + ASSIGN + M_REG)
+
+        # Writes the extracted value to the wanted segment:
+        self.__writeLine(LOAD_A + address)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
 
     def __writePushPop(self, command, segment, index):
         """
@@ -26,36 +71,14 @@ class CodeWriter:
         :param segment: either ARG, THAT, THIS,
         :param index:
         """
+        # Get address to Push/Pop
+        address = getAddress(segment, index)
 
-        add_base_index = SEGMENTS.get(segment) + index
-
+        # Write the appropriate command
         if command == C_PUSH:
-
-            # Writes the translation into the output file:
-            self.__output.write(A_INST_PREFIX + str(add_base_index) + NEW_LINE)
-            self.__output.write(D_REG + EQUAL + M_REG + NEW_LINE)
-
-            # Enters the extracted value to the stack:
-            self.__output.write(A_INST_PREFIX + SP + NEW_LINE)
-            self.__output.write(A_REG + EQUAL + M_REG + NEW_LINE)
-            self.__output.write(M_REG + EQUAL + D_REG + NEW_LINE)
-
-            # Increments SP:
-            self.__output.write(A_INST_PREFIX + SP + NEW_LINE)
-            self.__output.write(M_REG + EQUAL + M_REG + ADD + ONE + NEW_LINE)
-
+            self.__writePush(address)
         elif command == C_POP:
-
-            # Decrements SP and extracts the topmost value of the stack:
-            self.__output.write(A_INST_PREFIX + SP + NEW_LINE)
-            self.__output.write(M_REG + EQUAL + M_REG + SUB + ONE + NEW_LINE)
-            self.__output.write(A_REG + EQUAL + M_REG + NEW_LINE)
-            self.__output.write(D_REG + EQUAL + M_REG + NEW_LINE)
-
-            # Writes the extracted value to the wanted segment:
-            self.__output.write(A_INST_PREFIX + str(add_base_index) + NEW_LINE)
-            self.__output.write(M_REG + EQUAL + D_REG + NEW_LINE)
-
+            self.__writePop(address)
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
 
@@ -66,21 +89,19 @@ class CodeWriter:
         :param operation: add , sub , or, and  operation in assembly.
         """
 
-        # Pops two values from the stack and saves them in the temp segment:
-        self.__writePushPop(C_POP, TEMP, TEMP_0)
-        self.__writePushPop(C_POP, TEMP, TEMP_1)
+        # Pops x and y from the stack and saves them in the temp
+        # segment:
+        self.__writePop(ADDRESS_TEMP_0)
+        self.__writePop(ADDRESS_TEMP_1)
 
         # Does the calculation :)
-        self.__output.write(
-            A_INST_PREFIX + str(SEGMENTS.get(TEMP) + TEMP_0) + NEW_LINE)
-        self.__output.write(D_REG + EQUAL + M_REG + NEW_LINE)
-        self.__output.write(
-            A_INST_PREFIX + str(SEGMENTS.get(TEMP) + TEMP_1) + NEW_LINE)
-        self.__output.write(
-            M_REG + EQUAL + D_REG + operation + M_REG + NEW_LINE)
+        self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
+        self.__writeLine(D_REG + ASSIGN + M_REG)
+        self.__writeLine(LOAD_A + ADDRESS_TEMP_1)
+        self.__writeLine(M_REG + ASSIGN + D_REG + operation + M_REG)
 
         # Pushes the result back to the topmost cell in the stack:
-        self.__writePushPop(C_PUSH, TEMP, TEMP_1)
+        self.__writePush(ADDRESS_TEMP_1)
 
     def __handle_unary(self, operation):
         """
@@ -90,15 +111,14 @@ class CodeWriter:
         """
 
         # Extracts the value in the topmost stack cell and keeps it in temp.
-        self.__writePushPop(C_POP, TEMP, TEMP_0)
+        self.__writePop(ADDRESS_TEMP_0)
 
         # Does the calculation:
-        self.__output.write(
-            A_INST_PREFIX + str(SEGMENTS.get(TEMP) + TEMP_0) + NEW_LINE)
-        self.__output.write(M_REG + EQUAL + operation + M_REG + NEW_LINE)
+        self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
+        self.__writeLine(M_REG + ASSIGN + operation + M_REG)
 
         # Pushes the result back to the stack:
-        self.__writePushPop(C_PUSH, TEMP, TEMP_0)
+        self.__writePush(ADDRESS_TEMP_0)
 
     def __handle_jumps(self, operation):
         """

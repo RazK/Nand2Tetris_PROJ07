@@ -83,7 +83,7 @@ class Parser:
         """
 
         # Tests if the command has a second argument:
-        if self.commandType() not in [C_PUSH, C_POP, C_FUNCTION, C_CALL]:
+        if self.commandType() not in COMMANDS_WITH_2_ARGS:
             raise ValueError(NO_SECOND_ARG_MSG)
 
         # Extracts the second argument:
