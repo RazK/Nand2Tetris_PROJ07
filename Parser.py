@@ -1,4 +1,4 @@
-from src.Nand2Tetris_PROJ07.Utils import *
+from Utils import *
 
 # Comand Structure: OPERATION [ARG1] [ARG2]
 # Examples:

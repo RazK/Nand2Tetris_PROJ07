@@ -1,8 +1,8 @@
 import os
 import sys
-from src.Nand2Tetris_PROJ07.CodeWriter import CodeWriter
-from src.Nand2Tetris_PROJ07.Parser import Parser
-from src.Nand2Tetris_PROJ07.Utils import *
+from CodeWriter import CodeWriter
+from Parser import Parser
+from Utils import *
 
 VM_EXTENSION = ".vm"
 ASM_EXTENSION = ".asm"

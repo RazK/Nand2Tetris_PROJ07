@@ -1,4 +1,6 @@
-from src.Nand2Tetris_PROJ07.Utils import *
+from Utils import *
+
+CONSTANT_SEG_NAME = "constant"
 
 class CodeWriter:
     def __init__(self, outfile):
@@ -135,15 +137,44 @@ class CodeWriter:
         # Pushes the result back to the stack:
         self.__writePush(ADDRESS_TEMP_0)
 
-    def __handleJumps(self, operation):
+    def __handleComparative(self, operation):
         """
         Translates the operations: x=y, x>y, x<y to assembly, and writs
         to the output file.
         :param operation: eq, gt, lt.
         :return:
         """
-        # TODO: Noy: handle in the next stage.
-        pass
+        # todo: Noy: handle <, >.
+
+        # Subtracting the values in the two topmost cells:
+        self.__handleBinary(SUB)
+
+        # Keeps the result in Temp 0 segment:
+        self.__writePop(ADDRESS_TEMP_0)
+
+        # Initializes Temp 1 to be 0:
+        self.__writeLine(LOAD_A + ADDRESS_TEMP_1)
+        self.__writeLine(M_REG + ASSIGN + ZERO)
+
+        # Initializes D with the Subtraction result:
+        self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
+        self.__writeLine(D_REG + ASSIGN + M_REG)
+
+        # If the comparision result is T, changes temp 1 to "-1":
+        self.__writeLine(LOAD_A + TRUE_ADDRESS)
+        self.__writeLine(operation)
+
+        # Else, it remains "0":
+        self.__writeLine(LOAD_A + FALSE_ADDRESS)
+        self.__writeLine(JUMP)
+        self.__writeLine(TRUE_TAG)
+        self.__writeLine(LOAD_A + ADDRESS_TEMP_1)
+        self.__writeLine(M_REG + ASSIGN + NEG_ONE)
+        self.__writeLine(FALSE_TAG)
+
+        # Pushes the result back to the stack:
+        self.__writePush(ADDRESS_TEMP_1)
+
 
     def writeArithmetic(self, operation):
         """
@@ -158,7 +189,8 @@ class CodeWriter:
         elif operation in OPERATIONS_ARITHMETIC_UNARY:
             self.__handleUnary(OPERATIONS_ARITHMETIC_UNARY[operation])
 
-        # TODO: Noy: to add something for < > = (in next stage)
+        elif operation in OPERATIONS_ARITHMETIC_COMPARE:
+            self.__handleComparative(OPERATIONS_ARITHMETIC_COMPARE[operation])
 
         else:
             raise ValueError(NOT_AN_OPERATION_MSG)
@@ -177,7 +209,7 @@ def main():
     """
     with open("file.asm", "w+") as f:
         gustav = CodeWriter(f)
-        gustav.writeArithmetic("neg")
+        gustav.writeArithmetic("eq")
         # gustav.writePushPop("C_POP", "static", 17)
 
 

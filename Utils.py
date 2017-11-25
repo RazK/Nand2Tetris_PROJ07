@@ -1,4 +1,8 @@
-# COMMAND TYPES:
+##################
+# CODE OPERATIONS
+##################
+
+# OPERATIONS TYPES:
 C_ARITHMETIC = "C_ARITHMETIC"
 C_PUSH = "C_PUSH"
 C_POP = "C_POP"
@@ -13,26 +17,7 @@ OPERATIONS_WITH_2_ARGS = [C_PUSH, C_POP, C_FUNCTION, C_CALL]
 # PUSH POP OPERATIONS:
 OPERATIONS_PUSH_POP = [C_PUSH, C_POP]
 
-# ARITHMETIC OPERATIONS:
-OPERATIONS_ARITHMETIC_BINARY = {
-    "add": "+",
-    "sub": "-",
-    "and": "&",
-    "or": "|"
-}
-OPERATIONS_ARITHMETIC_UNARY = {
-    "neg": "-",
-    "not": "!"
-}
-OPERATIONS_ARITHMETIC = {**OPERATIONS_ARITHMETIC_BINARY,
-                         **OPERATIONS_ARITHMETIC_UNARY}
-ASSIGN = "="
-ADD = "+"
-SUB = "-"
-ONE = "1"
-ZERO = "0"
-
-# OTHER OPERATIONS:
+# CODE OPERATION IDENTIFIERS:
 C_OPERATIONS = {
     "push": C_PUSH,
     "pop": C_POP,
@@ -44,7 +29,39 @@ C_OPERATIONS = {
     "call": C_CALL
 }
 
-# MEMORY ALIASES:
+
+########################
+# ARITHMETIC OPERATIONS
+########################
+
+OPERATIONS_ARITHMETIC_BINARY = {
+    "add": "+",
+    "sub": "-",
+    "and": "&",
+    "or": "|"
+}
+OPERATIONS_ARITHMETIC_UNARY = {
+    "neg": "-",
+    "not": "!"
+}
+OPERATIONS_ARITHMETIC_COMPARE = {
+    "eq": "D;JEQ"
+}
+OPERATIONS_ARITHMETIC = {**OPERATIONS_ARITHMETIC_BINARY,
+                         **OPERATIONS_ARITHMETIC_UNARY}
+ASSIGN = "="
+ADD = "+"
+SUB = "-"
+ONE = "1"
+NEG_ONE = "-1"
+ZERO = "0"
+
+
+#########
+# MEMORY
+#########
+
+# MEMORY ALIASES
 SP = "R0"
 LCL = "R1"
 ARG = "R2"
@@ -63,33 +80,6 @@ SEGMENTS = {
     "pointer": 3,  # Memory Segments Mapping (Book page 118)
     "temp": 5
 }
-CONSTANT_SEG_NAME = "constant"
-
-# INSTRUCTIONS:
-LOAD_A = "@"
-
-# REGISTERS:
-M_REG = "M"
-A_REG = "A"
-D_REG = "D"
-
-# ERRORS MESSAGES:
-WRONG_COMMAND_TYPE_MSG = "This method should get only 'C_PUSH' or 'C_POP' " \
-                         "as command type."
-NOT_AN_OPERATION_MSG = "Operation is not supported."
-COMMAND_NOT_SUPPORTED_MSG = "Command is not supported."
-ARG_ASKED_FOR_RETURN_MSG = "The return command has no arguments."
-NO_SECOND_ARG_MSG = "Command has no second argument."
-POP_FROM_CONSTANT_MSG = "Popping to the constant segment is not supported."
-
-# MORE:
-NEW_LINE = "\n"
-SPACE = " "
-TAB = "\t"
-COMMENT_PREFIX = "//"
-EOF = ""
-EMPTY_LINE = ''
-
 
 def getAddress(segment, index):
     """
@@ -108,3 +98,44 @@ TEMP = "temp"
 ADDRESS_TEMP_0 = getAddress(TEMP, 0)
 ADDRESS_TEMP_1 = getAddress(TEMP, 1)
 DEFAULT_COMMAND = None
+
+
+############
+# ASM CODE
+############
+
+# INSTRUCTIONS:
+LOAD_A = "@"
+
+# REGISTERS:
+M_REG = "M"
+A_REG = "A"
+D_REG = "D"
+
+# MORE:
+NEW_LINE = "\n"
+SPACE = " "
+TAB = "\t"
+COMMENT_PREFIX = "//"
+EOF = ""
+EMPTY_LINE = ''
+
+# CONDITIONS:
+TRUE_ADDRESS = "TRUE"
+FALSE_ADDRESS = "FALSE"
+TRUE_TAG = "(TRUE)"
+FALSE_TAG = "(FALSE)"
+JUMP = "D;JMP"
+
+
+#################
+# ERROR MESSAGES
+#################
+
+WRONG_COMMAND_TYPE_MSG = "This method should get only 'C_PUSH' or 'C_POP' " \
+                         "as command type."
+NOT_AN_OPERATION_MSG = "Operation is not supported."
+COMMAND_NOT_SUPPORTED_MSG = "Command is not supported."
+ARG_ASKED_FOR_RETURN_MSG = "The return command has no arguments."
+NO_SECOND_ARG_MSG = "Command has no second argument."
+POP_FROM_CONSTANT_MSG = "Popping to the constant segment is not supported."
