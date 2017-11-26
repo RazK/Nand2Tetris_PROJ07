@@ -123,8 +123,8 @@ class CodeWriter:
 
         # Pops x and y from the stack and saves them in the temp
         # segment:
-        self.__writePop(ADDRESS_TEMP_0)
         self.__writePop(ADDRESS_TEMP_1)
+        self.__writePop(ADDRESS_TEMP_0)
 
         # Does the calculation :)
         self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
@@ -171,7 +171,6 @@ class CodeWriter:
         to the output file.
         :param operation: eq, gt, lt.
         """
-        # todo: Noy: handle <, >.
         # TODO: RazK: Prevent integer overflow/underflow
         # Subtracting the values in the two topmost cells:
         self.__writeBinary(SUB)
@@ -190,7 +189,7 @@ class CodeWriter:
         # If the comparision result is T, changes temp 1 to "-1":
         TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
         self.__writeLine(LOAD_A + TRUE_LABEL)
-        self.__writeLine(A_EQ)
+        self.__writeLine(operation)
 
         # Else, it remains "0":
         FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
@@ -246,9 +245,7 @@ def main():
         gustav = CodeWriter(f)
         gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 5)
         gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 3)
-        gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 4)
-        gustav.writeArithmetic("eq")
-        gustav.writeArithmetic("eq")
+        gustav.writeArithmetic("lt")
         # gustav.writePushPop("C_POP", "static", 17)
 
 
