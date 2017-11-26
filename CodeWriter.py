@@ -91,8 +91,8 @@ class CodeWriter:
         Writes the assembly code that is the translation of the given
         operation, where the operation is either C_PUSH or C_POP.
         :param operation: either C_PUSH or C_POP
-        :param segment: either ARG, THAT, THIS,
-        :param index:
+        :param segment: either ARG, THAT, THIS, LCL,
+        :param index: The index of the wanted register in the segment.
         """
 
         # Get physical address to Push/Pop
@@ -210,7 +210,8 @@ class CodeWriter:
         :param operation: The arithmetic command to be translated.
         """
         if operation in A_OPERATIONS:
-            operation_asm = A_OPERATIONS.get(operation)
+            operation_asm =\
+                A_OPERATIONS.get(operation)
 
             if operation_asm in A_OPERATIONS_BINARY:
                 self.__writeBinary(operation_asm)
