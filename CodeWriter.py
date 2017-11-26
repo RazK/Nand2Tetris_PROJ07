@@ -209,18 +209,14 @@ class CodeWriter:
         arithmetic operation.
         :param operation: The arithmetic command to be translated.
         """
-        if operation in A_OPERATIONS:
-            operation_asm =\
-                A_OPERATIONS.get(operation)
+        if operation in A_OPERATIONS_BINARY:
+            self.__writeBinary(operation)
 
-            if operation_asm in A_OPERATIONS_BINARY:
-                self.__writeBinary(operation_asm)
+        elif operation in A_OPERATIONS_UNARY:
+            self.__writeUnary(operation)
 
-            elif operation_asm in A_OPERATIONS_UNARY:
-                self.__writeUnary(operation_asm)
-
-            elif operation_asm in A_OPERATIONS_COMPARE:
-                self.__writeComparative(operation_asm)
+        elif operation in A_OPERATIONS_COMPARE:
+            self.__writeComparative(operation)
 
         else:
             raise ValueError(NOT_AN_OPERATION_MSG)
