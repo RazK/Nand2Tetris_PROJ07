@@ -12,10 +12,12 @@ C_IF = "C_IF"
 C_FUNCTION = "C_FUNCTION"
 C_RETURN = "C_RETURN"
 C_CALL = "C_CALL"
-OPERATIONS_WITH_2_ARGS = [C_PUSH, C_POP, C_FUNCTION, C_CALL]
+
+# OPERATION WITH 2 ARGUMENTS:
+C_OPERATIONS_BINARY = [C_PUSH, C_POP, C_FUNCTION, C_CALL]
 
 # PUSH POP OPERATIONS:
-OPERATIONS_PUSH_POP = [C_PUSH, C_POP]
+C_OPERATIONS_PUSH_POP = [C_PUSH, C_POP]
 
 # CODE OPERATION IDENTIFIERS:
 C_OPERATIONS = {
@@ -29,33 +31,43 @@ C_OPERATIONS = {
     "call": C_CALL
 }
 
-
 ########################
 # ARITHMETIC OPERATIONS
 ########################
 
-OPERATIONS_ARITHMETIC_BINARY = {
-    "add": "+",
-    "sub": "-",
-    "and": "&",
-    "or": "|"
-}
-OPERATIONS_ARITHMETIC_UNARY = {
-    "neg": "-",
-    "not": "!"
-}
-OPERATIONS_ARITHMETIC_COMPARE = {
-    "eq": "D;JEQ"
-}
-OPERATIONS_ARITHMETIC = {**OPERATIONS_ARITHMETIC_BINARY,
-                         **OPERATIONS_ARITHMETIC_UNARY}
-ASSIGN = "="
-ADD = "+"
-SUB = "-"
-ONE = "1"
-NEG_ONE = "-1"
-ZERO = "0"
+# OPERATION TYPES:
+A_ADD = "+"
+A_SUB = "-"
+A_AND = "&"
+A_OR = "|"
+A_NEG = "-"
+A_NOT = "!"
+A_EQ = "D;JEQ"
+A_LT = "D;JLT"
+A_GT = "D;JGT"
 
+# OPERATIONS WITH 2 ARGS:
+A_OPERATIONS_BINARY = [A_ADD, A_SUB, A_AND, A_OR]
+
+# OPERATIONS WITH 1 ARG:
+A_OPERATIONS_UNARY = [A_NEG, A_NOT]
+
+# OPERATIONS WITH NO ARGS
+A_OPERATIONS_COMPARE = [A_EQ, A_LT, A_GT]
+
+A_OPERATIONS = {
+    "add": A_ADD,
+    "sub": A_SUB,
+    "and": A_AND,
+    "or": A_OR,
+    "neg": A_NEG,
+    "not": A_NOT,
+    "eq": A_EQ,
+    "lt": A_LT,
+    "gt": A_GT
+}
+
+A_OPERATIONS_ANY = A_OPERATIONS.values()
 
 #########
 # MEMORY
@@ -68,7 +80,7 @@ ARG = "R2"
 THIS = "R3"
 THAT = "R4"
 
-# Segments Predefined Addresses
+# SEGMENTS PREDEFINED ADDRESSES
 # TODO: RazK, Noy: Update segments with real values
 SEGMENTS = {
     "argument": 0,
@@ -80,6 +92,13 @@ SEGMENTS = {
     "pointer": 3,  # Memory Segments Mapping (Book page 118)
     "temp": 5
 }
+CONSTANT_SEG_NAME = "constant"
+
+# STACK
+STACK_START_ADDRESS = 256
+STACK_END_ADDRESS = 2047
+STACK_SIZE = STACK_END_ADDRESS - STACK_START_ADDRESS + 1
+
 
 def getAddress(segment, index):
     """
@@ -99,7 +118,6 @@ ADDRESS_TEMP_0 = getAddress(TEMP, 0)
 ADDRESS_TEMP_1 = getAddress(TEMP, 1)
 DEFAULT_COMMAND = None
 
-
 ############
 # ASM CODE
 ############
@@ -111,6 +129,14 @@ LOAD_A = "@"
 M_REG = "M"
 A_REG = "A"
 D_REG = "D"
+
+# OPERATORS:
+ASSIGN = "="
+ADD = "+"
+SUB = "-"
+ONE = "1"
+NEG_ONE = "-1"
+ZERO = "0"
 
 # MORE:
 NEW_LINE = "\n"
@@ -127,6 +153,28 @@ TRUE_TAG = "(TRUE)"
 FALSE_TAG = "(FALSE)"
 JUMP = "D;JMP"
 
+def declareLabel(label):
+    """
+    Returns a label definition line which can be written to the output.
+    Example:
+        label = "foo" --> returns "(foo)"
+    :param label: label to get declaration for
+    :return: label within parenthesis according to declaration format.
+    """
+    return "({})".format(label)
+
+SIZEOF_WORD = 15 # bits
+
+def twosComplement(num):
+    """
+    Returns the number in it's two's complement (always positive)
+    representation.
+    :param num: number to complement.
+    :return: The number complemented to a positive representation.
+    """
+    bin_complement = bin(int(num) & int("1" * SIZEOF_WORD, 2))[2:]
+    str_complement = ("{0:0>%s}" % (SIZEOF_WORD)).format(bin_complement)
+    return str(int(str_complement, 2))
 
 #################
 # ERROR MESSAGES

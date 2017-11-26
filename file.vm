@@ -1,0 +1,9 @@
+push constant 5555
+push constant 4444
+lt
+push constant -1234
+push constant -5678
+lt
+push constant -5678
+push constant -1234
+lt

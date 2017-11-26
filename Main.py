@@ -6,7 +6,7 @@ from Utils import *
 
 VM_EXTENSION = ".vm"
 ASM_EXTENSION = ".asm"
-DEFAULT_VM_FILE = "test\\foo.vm"
+DEFAULT_VM_FILE = "file.vm"#"test\\underflow.vm"
 DEFAULT_VM_DIR = "..\\..\\MemoryAccess\\BasicTest"
 
 def main(path):
@@ -56,18 +56,24 @@ def translate(sources, output):
             # Open source for translation, output file for writing
             with open(sourcefile, 'r') as source:
                 parser = Parser(source)
-                writer.writeComment(sourcefile)
+                writer.writeComment("FILE: {}".format(sourcefile))
 
                 # Parse each command line in the source and translate
                 while (parser.hasMoreCommands()):
+
+                    # Write comment of current command
+                    writer.writeComment(
+                        parser.getCurrCommand().strip(NEW_LINE))
+
+                    # Parse command
                     operation = parser.getOperation()
 
-                    if operation in OPERATIONS_PUSH_POP:
+                    if operation in C_OPERATIONS_PUSH_POP:
                         segment = parser.arg1()
                         index = parser.arg2()
                         writer.writePushPop(operation, segment, index)
 
-                    elif operation in OPERATIONS_ARITHMETIC:
+                    elif operation in A_OPERATIONS_ANY:
                         writer.writeArithmetic(operation)
                     parser.advance()
 
@@ -78,4 +84,4 @@ if (__name__ == "__main__"):
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        main(DEFAULT_VM_DIR)
+        main(DEFAULT_VM_FILE)

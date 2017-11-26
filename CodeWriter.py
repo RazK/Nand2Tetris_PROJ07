@@ -1,6 +1,5 @@
 from Utils import *
 
-CONSTANT_SEG_NAME = "constant"
 
 class CodeWriter:
     def __init__(self, outfile):
@@ -8,6 +7,9 @@ class CodeWriter:
         Open the output file/stream and gets ready to write into it.
         """
         self.__output = outfile
+        self.__stackSize = 0
+        self.__unique_id = 0
+
 
     def setFileName(self, file_name):
         # TODO: RazK, Noy: Decide on a naming convention for methods,
@@ -38,8 +40,11 @@ class CodeWriter:
         :param segment: either ARG, THAT, THIS,
         :param index: index relative to the segment.
         """
+        if (self.__stackSize >= STACK_SIZE):
+            raise OverflowError("Push operation will result in stack "
+                                "overflow!")
         # Writes the translation into the output file:
-        self.__writeLine(LOAD_A + address)
+        self.__writeLine(LOAD_A + address.strip())
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # Enters the extracted value to the stack:
@@ -50,6 +55,7 @@ class CodeWriter:
         # Increments SP:
         self.__writeLine(LOAD_A + SP)
         self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)
+        self.__stackSize += 1
 
     def __writePop(self, address):
         """
@@ -58,14 +64,19 @@ class CodeWriter:
         :param segment: either ARG, THAT, THIS,
         :param index: index relative to the segment.
         """
+        if (self.__stackSize <= 0):
+            raise OverflowError("Pop operation will result in stack "
+                                "underflow!")
+
         # Decrements SP and extracts the topmost value of the stack:
         self.__writeLine(LOAD_A + SP)
         self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(D_REG + ASSIGN + M_REG)
+        self.__stackSize -= 1
 
         # Writes the extracted value to the wanted segment:
-        self.__writeLine(LOAD_A + address)
+        self.__writeLine(LOAD_A + address.strip())
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
     def writeComment(self, comment):
@@ -83,15 +94,19 @@ class CodeWriter:
         :param segment: either ARG, THAT, THIS,
         :param index:
         """
-        # Get address to Push/Pop
-        address = getAddress(segment, int(index.strip()))
+
+        # Get physical address to Push/Pop
+        if segment != CONSTANT_SEG_NAME:
+            address = getAddress(segment, int(index))
+        # Emulate addresses for constants using TEMP_0 register
+        else:
+            self.__saveValueInTemp(index)
+            address = ADDRESS_TEMP_0
 
         # Write the appropriate command
         if operation == C_PUSH:
             self.__writePush(address)
         elif operation == C_POP:
-            # TODO: RazK: Probably there's a better place in Utils to define
-            # 'CONSTANT_SEG_NAME'
             if segment == CONSTANT_SEG_NAME:
                 # Can't pop to constant segment
                 raise ValueError(POP_FROM_CONSTANT_MSG)
@@ -99,7 +114,7 @@ class CodeWriter:
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
 
-    def __handleBinary(self, operation):
+    def __writeBinary(self, operation):
         """
         Translates the operations: x+y, x-y, x&y, x|y to assembly, and writs
         to the output file.
@@ -120,7 +135,7 @@ class CodeWriter:
         # Pushes the result back to the topmost cell in the stack:
         self.__writePush(ADDRESS_TEMP_1)
 
-    def __handleUnary(self, operation):
+    def __writeUnary(self, operation):
         """
         Translates the operations: -x, !x to assembly, and writs
         to the output file.
@@ -137,17 +152,29 @@ class CodeWriter:
         # Pushes the result back to the stack:
         self.__writePush(ADDRESS_TEMP_0)
 
-    def __handleComparative(self, operation):
+    def __uniqueLabel(self, label):
         """
-        Translates the operations: x=y, x>y, x<y to assembly, and writs
+        Adds a unique id to the given label to prevent collisions with other
+        labels carrying the same name.
+        Example:
+            localizeLabel("TRUE") --> "TRUE_1"
+        :param label: label to localize
+        :return: Given label with a unique identifier.
+        """
+        unique_label = "{}_{}".format(self.__unique_id, label)
+        self.__unique_id += 1
+        return unique_label
+
+    def __writeComparative(self, operation):
+        """
+        Translates the operations: x=y, x>y, x<y to assembly, and writes
         to the output file.
         :param operation: eq, gt, lt.
-        :return:
         """
         # todo: Noy: handle <, >.
-
+        # TODO: RazK: Prevent integer overflow/underflow
         # Subtracting the values in the two topmost cells:
-        self.__handleBinary(SUB)
+        self.__writeBinary(SUB)
 
         # Keeps the result in Temp 0 segment:
         self.__writePop(ADDRESS_TEMP_0)
@@ -161,20 +188,21 @@ class CodeWriter:
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # If the comparision result is T, changes temp 1 to "-1":
-        self.__writeLine(LOAD_A + TRUE_ADDRESS)
-        self.__writeLine(operation)
+        TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
+        self.__writeLine(LOAD_A + TRUE_LABEL)
+        self.__writeLine(A_EQ)
 
         # Else, it remains "0":
-        self.__writeLine(LOAD_A + FALSE_ADDRESS)
+        FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
+        self.__writeLine(LOAD_A + FALSE_LABEL)
         self.__writeLine(JUMP)
-        self.__writeLine(TRUE_TAG)
+        self.__writeLine(declareLabel(TRUE_LABEL))
         self.__writeLine(LOAD_A + ADDRESS_TEMP_1)
         self.__writeLine(M_REG + ASSIGN + NEG_ONE)
-        self.__writeLine(FALSE_TAG)
+        self.__writeLine(declareLabel(FALSE_LABEL))
 
         # Pushes the result back to the stack:
         self.__writePush(ADDRESS_TEMP_1)
-
 
     def writeArithmetic(self, operation):
         """
@@ -183,23 +211,28 @@ class CodeWriter:
         :param operation: The arithmetic command to be translated.
         """
 
-        if operation in OPERATIONS_ARITHMETIC_BINARY:
-            self.__handleBinary(OPERATIONS_ARITHMETIC_BINARY[operation])
+        if operation in A_OPERATIONS_BINARY:
+            self.__writeBinary(operation)
 
-        elif operation in OPERATIONS_ARITHMETIC_UNARY:
-            self.__handleUnary(OPERATIONS_ARITHMETIC_UNARY[operation])
+        elif operation in A_OPERATIONS_UNARY:
+            self.__writeUnary(operation)
 
-        elif operation in OPERATIONS_ARITHMETIC_COMPARE:
-            self.__handleComparative(OPERATIONS_ARITHMETIC_COMPARE[operation])
+        elif operation in A_OPERATIONS_COMPARE:
+            self.__writeComparative(operation)
 
         else:
             raise ValueError(NOT_AN_OPERATION_MSG)
 
-    def close(self):
+    def __saveValueInTemp(self, value):
         """
-        Closes the output file
-        :return:
+        Saves the given value in the temp register.
+        :param value: Numeric value to save in the temp register
         """
+        safe_value = twosComplement(value.strip())
+        self.__writeLine(LOAD_A + safe_value)
+        self.__writeLine(D_REG + ASSIGN + A_REG)
+        self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
         pass
 
 
@@ -209,6 +242,8 @@ def main():
     """
     with open("file.asm", "w+") as f:
         gustav = CodeWriter(f)
+        gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 5)
+        gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 3)
         gustav.writeArithmetic("eq")
         # gustav.writePushPop("C_POP", "static", 17)
 

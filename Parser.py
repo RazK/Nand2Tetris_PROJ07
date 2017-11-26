@@ -33,6 +33,13 @@ class Parser:
         stripped = self.__curr_command.strip(SPACE + TAB)
         return stripped == NEW_LINE or stripped.startswith(COMMENT_PREFIX)
 
+    def getCurrCommand(self):
+        """
+        Returns a string of the current command line.
+        :return: string with the current command line.
+        """
+        return self.__curr_command
+
     def hasMoreCommands(self):
         """
         Are there more commands in the input?
@@ -71,8 +78,8 @@ class Parser:
         if op in C_OPERATIONS:
             return C_OPERATIONS[op]
 
-        elif op in OPERATIONS_ARITHMETIC:
-            return C_ARITHMETIC
+        elif op in A_OPERATIONS:
+            return A_OPERATIONS[op]
 
         else:
             raise ValueError(NOT_AN_OPERATION_MSG)
@@ -103,7 +110,7 @@ class Parser:
         """
 
         # Tests if the command has a second argument:
-        if self.getOperation() not in OPERATIONS_WITH_2_ARGS:
+        if self.getOperation() not in C_OPERATIONS_BINARY:
             raise ValueError(NO_SECOND_ARG_MSG)
 
         # Extracts the second argument:
