@@ -9,8 +9,25 @@ Raz Karl, 	    ID 311143127, raz.karl@mail.huji.ac.il
 Submitted Files
 ---------------
 README 				- This file.
-TBD
+
+CodeWriter - This Class translates VM language commands into assembly language.
+
+Parser -  Handles the parsing of a single .vm file, and encapsulates access to
+the input code. It reads VM commands, parses them, and provides convenient
+access to their components. In addition, it removes all white space and
+comments.
+
+Utils - This class consists of constants and dictionaries for the usage of
+other classes.
+
+Main - Main gets a directory path or a .vm file's path from the command line:
+* In the case the input is a directory path - Main translate all of the .vm
+  files in the directory into one Assembly file.
+* Otherwise: It translate the given file into an Assembly file.
 
 Summary
 -------
-TBD
+This is a virtual machine -
+An abstract computer that serves a part in the translation of high level
+programing language into a machine language. The high level language is
+translated into VM language and the VM language is translated into Assembly.
