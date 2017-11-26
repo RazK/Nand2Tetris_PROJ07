@@ -210,15 +210,17 @@ class CodeWriter:
         arithmetic operation.
         :param operation: The arithmetic command to be translated.
         """
+        if operation in A_OPERATIONS:
+            operation_asm = A_OPERATIONS.get(operation)
 
-        if operation in A_OPERATIONS_BINARY:
-            self.__writeBinary(operation)
+            if operation_asm in A_OPERATIONS_BINARY:
+                self.__writeBinary(operation_asm)
 
-        elif operation in A_OPERATIONS_UNARY:
-            self.__writeUnary(operation)
+            elif operation_asm in A_OPERATIONS_UNARY:
+                self.__writeUnary(operation_asm)
 
-        elif operation in A_OPERATIONS_COMPARE:
-            self.__writeComparative(operation)
+            elif operation_asm in A_OPERATIONS_COMPARE:
+                self.__writeComparative(operation_asm)
 
         else:
             raise ValueError(NOT_AN_OPERATION_MSG)
@@ -228,7 +230,7 @@ class CodeWriter:
         Saves the given value in the temp register.
         :param value: Numeric value to save in the temp register
         """
-        safe_value = twosComplement(value.strip())
+        safe_value = twosComplement(value)
         self.__writeLine(LOAD_A + safe_value)
         self.__writeLine(D_REG + ASSIGN + A_REG)
         self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
@@ -244,6 +246,8 @@ def main():
         gustav = CodeWriter(f)
         gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 5)
         gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 3)
+        gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 4)
+        gustav.writeArithmetic("eq")
         gustav.writeArithmetic("eq")
         # gustav.writePushPop("C_POP", "static", 17)
 
