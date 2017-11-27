@@ -196,7 +196,7 @@ class CodeWriter:
 
         # Manipulate directly on the stack (omg):
         self.__writeLine(LOAD_A + SP)
-        self.__writeLine(LOAD_A + ASSIGN + M_REG)
+        self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + operation + M_REG)
 
     def __uniqueLabel(self, label):
