@@ -101,6 +101,7 @@ SEGMENTS = {
     TEMP : TEMP
 }
 CONSTANT_SEG_NAME = "constant"
+TEMP_SEG_NAME = "temp"
 INDEX_0 = 0
 INDEX_1 = 1
 

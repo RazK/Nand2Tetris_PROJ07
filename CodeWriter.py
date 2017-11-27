@@ -52,6 +52,10 @@ class CodeWriter:
             self.__saveValueInTemp(index)
             # refer segment + index to the emulated memory
             self.__writeLine(LOAD_A + TEMP_0)
+
+        elif segment in [TEMP_SEG_NAME]:
+            self.__writeLine(LOAD_A + str(int(TEMP) + int(index)))
+
         else:
             # Load A with the specified address
             self.__writeLoadAddress(segment, index)
@@ -113,9 +117,9 @@ class CodeWriter:
             raise ValueError(POP_FROM_CONSTANT_MSG)
 
         # Save pop destination address in A
-        elif segment in [TEMP]:
+        elif segment in [TEMP_SEG_NAME]:
             # Statically find address
-            self.__writeLine(LOAD_A + str(int(segment)+int(index)))
+            self.__writeLine(LOAD_A + str(int(TEMP)+int(index)))
 
         else:
             # Dynamically resolve address
@@ -224,7 +228,7 @@ class CodeWriter:
         self.__writeBinary(SUB)
 
         # Keeps the result in Temp 0 segment:
-        self.__writePop(TEMP, INDEX_0)
+        self.__writePop(TEMP_SEG_NAME, INDEX_0)
 
         # Initializes Temp 1 to be 0:
         self.__writeLine(LOAD_A + TEMP_1)
@@ -249,7 +253,7 @@ class CodeWriter:
         self.__writeLine(declareLabel(FALSE_LABEL))
 
         # Pushes the result back to the stack:
-        self.__writePush(TEMP, INDEX_1)
+        self.__writePush(TEMP_SEG_NAME, INDEX_1)
 
     def writeArithmetic(self, operation):
         """
@@ -306,7 +310,7 @@ class CodeWriter:
 
         # Add offset if exists
         if (index != 0):
-            self.__writeLine(D_REG + ASSIGN + A_REG)
+            self.__writeLine(D_REG + ASSIGN + M_REG)
             self.__writeLine(LOAD_A + str(index).strip("\n"))
             self.__writeLine(A_REG + ASSIGN + D_REG + ADD + A_REG)
 
