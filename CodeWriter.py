@@ -171,19 +171,14 @@ class CodeWriter:
         # Write comment in output
         self.writeComment("__writeBinary")
 
-        # Pops x and y from the stack and saves them in the temp
-        # segment:
-        self.__writePop(TEMP, INDEX_1)
-        self.__writePop(TEMP, INDEX_0)
-
-        # Does the calculation :)
-        self.__writeLine(LOAD_A + TEMP_0)
+        # Does the calculation on the stack :)
+        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)
+        self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(D_REG + ASSIGN + M_REG)
-        self.__writeLine(LOAD_A + TEMP_1)
-        self.__writeLine(M_REG + ASSIGN + D_REG + operation + M_REG)
+        self.__writeLine(A_REG + ASSIGN + A_REG + SUB + ONE)
+        self.__writeLine(M_REG + ASSIGN + M_REG + operation + D_REG)
 
-        # Pushes the result back to the topmost cell in the stack:
-        self.__writePush(TEMP, INDEX_1)
 
     def __writeUnary(self, operation):
         """
