@@ -169,9 +169,9 @@ class CodeWriter:
         self.__writePop(TEMP, INDEX_0)
 
         # Does the calculation :)
-        self.__writeLoadAddress(TEMP, INDEX_0)
+        self.__writeLine(LOAD_A + TEMP_0)
         self.__writeLine(D_REG + ASSIGN + M_REG)
-        self.__writeLoadAddress(TEMP, INDEX_1)
+        self.__writeLine(LOAD_A + TEMP_1)
         self.__writeLine(M_REG + ASSIGN + D_REG + operation + M_REG)
 
         # Pushes the result back to the topmost cell in the stack:
@@ -190,7 +190,7 @@ class CodeWriter:
         self.__writePop(TEMP, INDEX_0)
 
         # Does the calculation:
-        self.__writeLoadAddress(TEMP, INDEX_0)
+        self.__writeLine(LOAD_A + TEMP_0)
         self.__writeLine(M_REG + ASSIGN + operation + M_REG)
 
         # Pushes the result back to the stack:
@@ -226,11 +226,11 @@ class CodeWriter:
         self.__writePop(TEMP, INDEX_0)
 
         # Initializes Temp 1 to be 0:
-        self.__writeLoadAddress(TEMP, INDEX_1)
+        self.__writeLine(LOAD_A + TEMP_1)
         self.__writeLine(M_REG + ASSIGN + ZERO)
 
         # Initializes D with the Subtraction result:
-        self.__writeLoadAddress(TEMP, INDEX_0)
+        self.__writeLine(LOAD_A + TEMP_0)
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # If the comparision result is T, changes temp 1 to "-1":
@@ -243,7 +243,7 @@ class CodeWriter:
         self.__writeLine(LOAD_A + FALSE_LABEL)
         self.__writeLine(JUMP)
         self.__writeLine(declareLabel(TRUE_LABEL))
-        self.__writeLoadAddress(TEMP, INDEX_1)
+        self.__writeLine(LOAD_A + TEMP_1)
         self.__writeLine(M_REG + ASSIGN + NEG_ONE)
         self.__writeLine(declareLabel(FALSE_LABEL))
 
@@ -283,7 +283,7 @@ class CodeWriter:
         safe_value = twosComplement(value)
         self.__writeLine(LOAD_A + safe_value)
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLoadAddress(TEMP, INDEX_0)
+        self.__writeLine(LOAD_A + TEMP_0)
         self.__writeLine(M_REG + ASSIGN + D_REG)
         pass
 
