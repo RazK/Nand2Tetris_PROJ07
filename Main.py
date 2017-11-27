@@ -6,7 +6,8 @@ from Utils import *
 
 VM_EXTENSION = ".vm"
 ASM_EXTENSION = ".asm"
-DEFAULT_VM_FILE = "file.vm"#"test\\underflow.vm"
+DEFAULT_VM_FILE = "..\\..\\MemoryAccess\\BasicTest\\BasicTest.vm"#"file.vm
+# "#"test\\underflow.vm"
 DEFAULT_VM_DIR = "..\\..\\MemoryAccess\\BasicTest"
 
 def main(path):

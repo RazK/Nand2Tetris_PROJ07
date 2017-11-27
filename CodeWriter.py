@@ -33,18 +33,28 @@ class CodeWriter:
             suffix = ''
         self.__output.write("{}{}\n".format(line, suffix))
 
-    def __writePush(self, address):
+    def __writePush(self, segment, index):
         """
-        Writes the assembly code that is the translation of the given push
-        command.
-        :param segment: either ARG, THAT, THIS,
-        :param index: index relative to the segment.
+        Writes the assembly code that pushes the value at the given segment
+        with the given index to the top of the stack .
+        :param segment: segment name
+        :param index: offset within the segment
         """
+        # Prevent stack overflows
         if (self.__stackSize >= STACK_SIZE):
             raise OverflowError("Push operation will result in stack "
                                 "overflow!")
-        # Writes the translation into the output file:
-        self.__writeLine(LOAD_A + address.strip())
+        # Emulate memory address for constant using temp
+        if segment in [CONSTANT_SEG_NAME]:
+            self.__saveValueInTemp(index)
+            # refer segment + index to the emulated memory
+            segment = TEMP
+            index = INDEX_0
+
+        # Load A with the specified address
+        self.__writeLoadAddress(segment, index)
+
+        # Fetch the value at the specified address
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # Enters the extracted value to the stack:
@@ -57,26 +67,58 @@ class CodeWriter:
         self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)
         self.__stackSize += 1
 
-    def __writePop(self, address):
+    # def __writePop(self, segment, index):
+    #     """
+    #     Writes the assembly code that pops the value at the top of the stack to
+    #     the given segment at the given index.
+    #     :param segment: segment name
+    #     :param index: offset within the segment
+    #     """
+    #     # Prevent stack underflows
+    #     if (self.__stackSize <= 0):
+    #         raise OverflowError("Pop operation will result in stack "
+    #                             "underflow!")
+    #
+    #     # Decrements SP and extracts the topmost value of the stack:
+    #     self.__writeLine(LOAD_A + SP)
+    #     self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)
+    #     self.__writeLine(A_REG + ASSIGN + M_REG)
+    #     self.__writeLine(D_REG + ASSIGN + M_REG)
+    #     self.__stackSize -= 1
+    #
+    #     # Load A with the specified address:
+    #     self.__writeLoadAddress(segment, index)
+    #
+    #     # Writes the extracted value to the wanted segment:
+    #     self.__writeLine(M_REG + ASSIGN + D_REG)
+    def __writePop(self, segment, index):
         """
-        Writes the assembly code that is the translation of the given pop
-        command.
-        :param segment: either ARG, THAT, THIS,
-        :param index: index relative to the segment.
+        Writes the assembly code that pops the value at the top of the stack to
+        the given segment at the given index.
+        :param segment: segment name
+        :param index: offset within the segment
         """
+        # Prevent stack underflows
         if (self.__stackSize <= 0):
             raise OverflowError("Pop operation will result in stack "
                                 "underflow!")
 
-        # Decrements SP and extracts the topmost value of the stack:
+        # Save pop destination address in temp
+        self.__writeLoadAddress(segment, index)
+        self.__writeLine(D_REG + ASSIGN + A_REG)
+        self.__writeLine(LOAD_A + TEMP)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+
+        # Decrements SP and extracts the topmost value of the stack to D:
         self.__writeLine(LOAD_A + SP)
         self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(D_REG + ASSIGN + M_REG)
         self.__stackSize -= 1
 
-        # Writes the extracted value to the wanted segment:
-        self.__writeLine(LOAD_A + address.strip())
+        # Write the popped value (in D) to the destination (in temp)
+        self.__writeLine(LOAD_A + TEMP)
+        self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
     def writeComment(self, comment):
@@ -95,22 +137,14 @@ class CodeWriter:
         :param index: The index of the wanted register in the segment.
         """
 
-        # Get physical address to Push/Pop
-        if segment != CONSTANT_SEG_NAME:
-            address = getAddress(segment, int(index))
-        # Emulate addresses for constants using TEMP_0 register
-        else:
-            self.__saveValueInTemp(index)
-            address = ADDRESS_TEMP_0
-
         # Write the appropriate command
         if operation == C_PUSH:
-            self.__writePush(address)
+            self.__writePush(segment, index)
         elif operation == C_POP:
             if segment == CONSTANT_SEG_NAME:
                 # Can't pop to constant segment
                 raise ValueError(POP_FROM_CONSTANT_MSG)
-            self.__writePop(address)
+            self.__writePop(segment, index)
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
 
@@ -123,17 +157,17 @@ class CodeWriter:
 
         # Pops x and y from the stack and saves them in the temp
         # segment:
-        self.__writePop(ADDRESS_TEMP_1)
-        self.__writePop(ADDRESS_TEMP_0)
+        self.__writePop(TEMP, INDEX_1)
+        self.__writePop(TEMP, INDEX_0)
 
         # Does the calculation :)
-        self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
+        self.__writeLoadAddress(TEMP, INDEX_0)
         self.__writeLine(D_REG + ASSIGN + M_REG)
-        self.__writeLine(LOAD_A + ADDRESS_TEMP_1)
+        self.__writeLoadAddress(TEMP, INDEX_1)
         self.__writeLine(M_REG + ASSIGN + D_REG + operation + M_REG)
 
         # Pushes the result back to the topmost cell in the stack:
-        self.__writePush(ADDRESS_TEMP_1)
+        self.__writePush(TEMP, INDEX_1)
 
     def __writeUnary(self, operation):
         """
@@ -143,14 +177,14 @@ class CodeWriter:
         """
 
         # Extracts the value in the topmost stack cell and keeps it in temp.
-        self.__writePop(ADDRESS_TEMP_0)
+        self.__writePop(TEMP, INDEX_0)
 
         # Does the calculation:
-        self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
+        self.__writeLoadAddress(TEMP, INDEX_0)
         self.__writeLine(M_REG + ASSIGN + operation + M_REG)
 
         # Pushes the result back to the stack:
-        self.__writePush(ADDRESS_TEMP_0)
+        self.__writePush(TEMP, INDEX_0)
 
     def __uniqueLabel(self, label):
         """
@@ -176,14 +210,14 @@ class CodeWriter:
         self.__writeBinary(SUB)
 
         # Keeps the result in Temp 0 segment:
-        self.__writePop(ADDRESS_TEMP_0)
+        self.__writePop(TEMP, INDEX_0)
 
         # Initializes Temp 1 to be 0:
-        self.__writeLine(LOAD_A + ADDRESS_TEMP_1)
+        self.__writeLoadAddress(TEMP, INDEX_1)
         self.__writeLine(M_REG + ASSIGN + ZERO)
 
         # Initializes D with the Subtraction result:
-        self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
+        self.__writeLoadAddress(TEMP, INDEX_0)
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # If the comparision result is T, changes temp 1 to "-1":
@@ -196,12 +230,12 @@ class CodeWriter:
         self.__writeLine(LOAD_A + FALSE_LABEL)
         self.__writeLine(JUMP)
         self.__writeLine(declareLabel(TRUE_LABEL))
-        self.__writeLine(LOAD_A + ADDRESS_TEMP_1)
+        self.__writeLoadAddress(TEMP, INDEX_1)
         self.__writeLine(M_REG + ASSIGN + NEG_ONE)
         self.__writeLine(declareLabel(FALSE_LABEL))
 
         # Pushes the result back to the stack:
-        self.__writePush(ADDRESS_TEMP_1)
+        self.__writePush(TEMP, INDEX_1)
 
     def writeArithmetic(self, operation):
         """
@@ -229,10 +263,28 @@ class CodeWriter:
         safe_value = twosComplement(value)
         self.__writeLine(LOAD_A + safe_value)
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + ADDRESS_TEMP_0)
+        self.__writeLoadAddress(TEMP, INDEX_0)
         self.__writeLine(M_REG + ASSIGN + D_REG)
         pass
 
+    def __writeLoadAddress(self, segment, index):
+        """
+        Writes the address specified by the given segment with the given
+        offset to the A register.
+        Notice! D_REG is used here and values it held before the call are LOST!
+        :param segment: Name of the desired segment (should be a key
+        in the SEGMENTS dict)
+        :param index: Offset relative to the given segment.
+        """
+        # TODO: RazK: Check parameters validity
+        # Load A reg with the specified segment address
+        self.__writeLine(LOAD_A + SEGMENTS[segment])
+
+        # Add offset if exists
+        if (index != 0):
+            self.__writeLine(D_REG + ASSIGN + M_REG)
+            self.__writeLine(LOAD_A + str(index).strip("\n"))
+            self.__writeLine(A_REG + ASSIGN + D_REG + ADD + A_REG)
 
 def main():
     """

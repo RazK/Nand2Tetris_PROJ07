@@ -1,3 +1,5 @@
+push constant 1234
+neg
 push constant 5555
 push constant 4444
 lt
