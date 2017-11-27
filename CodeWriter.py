@@ -112,8 +112,16 @@ class CodeWriter:
             # Can't pop to constant segment
             raise ValueError(POP_FROM_CONSTANT_MSG)
 
-        # Save pop destination address in temp
-        self.__writeLoadAddress(segment, index)
+        # Save pop destination address in A
+        elif segment in [TEMP]:
+            # Statically find address
+            self.__writeLine(LOAD_A + str(int(segment)+int(index)))
+
+        else:
+            # Dynamically resolve address
+            self.__writeLoadAddress(segment, index)
+
+        # Keep destination in temp
         self.__writeLine(D_REG + ASSIGN + A_REG)
         self.__writeLine(LOAD_A + TEMP)
         self.__writeLine(M_REG + ASSIGN + D_REG)

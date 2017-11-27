@@ -79,9 +79,9 @@ LCL = "R1"
 ARG = "R2"
 THIS = "R3"
 THAT = "R4"
-TEMP = "R5"
-TEMP_0 = "R5"
-TEMP_1 = "R6"
+TEMP = "5"
+TEMP_0 = "5"
+TEMP_1 = "6"
 CONSTANT = TEMP
 POINTER = THIS
 # TODO: RazK: fix real value for STATIC
