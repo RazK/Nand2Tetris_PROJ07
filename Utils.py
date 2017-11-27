@@ -79,20 +79,28 @@ LCL = "R1"
 ARG = "R2"
 THIS = "R3"
 THAT = "R4"
+TEMP = "R5"
+CONSTANT = TEMP
+POINTER = THIS
+# TODO: RazK: fix real value for STATIC
+STATIC = "Ben El" # LOL
 
 # SEGMENTS PREDEFINED ADDRESSES
 # TODO: RazK, Noy: Update segments with real values
 SEGMENTS = {
-    "argument": 0,
-    "local": 0,
-    "static": 0,
-    "constant": 0,
-    "this": 0,
-    "that": 0,
-    "pointer": 3,  # Memory Segments Mapping (Book page 118)
-    "temp": 5
+    "argument": ARG,
+    "local": LCL,
+    "static": STATIC,
+    "constant": CONSTANT,
+    "this": THIS,
+    "that": THAT,
+    "pointer": POINTER,  # Memory Segments Mapping (Book page 118)
+    "temp": TEMP,
+    TEMP : TEMP
 }
 CONSTANT_SEG_NAME = "constant"
+INDEX_0 = 0
+INDEX_1 = 1
 
 # STACK
 STACK_START_ADDRESS = 256
@@ -100,22 +108,7 @@ STACK_END_ADDRESS = 2047
 STACK_SIZE = STACK_END_ADDRESS - STACK_START_ADDRESS + 1
 
 
-def getAddress(segment, index):
-    """
-    Returns the absolute RAM address of the given segment + index.
-    :param segment: Name of the desired segment (should be a key in the
-                    SEGMENTS dict)
-    :param index: Offset relative to the given segment.
-    :return: Absolute RAM address of the given segment + index.
-    """
-    # TODO: RazK: Check parameters validity
-    return str(SEGMENTS[segment] + index)
-
-
 # INTERNAL CALCULATIONS:
-TEMP = "temp"
-ADDRESS_TEMP_0 = getAddress(TEMP, 0)
-ADDRESS_TEMP_1 = getAddress(TEMP, 1)
 DEFAULT_COMMAND = None
 
 ############
