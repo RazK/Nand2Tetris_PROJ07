@@ -6,8 +6,8 @@ from Utils import *
 
 VM_EXTENSION = ".vm"
 ASM_EXTENSION = ".asm"
-DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\StackArithmetic\\SimpleAdd\\SimpleAdd.vm"
-#DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\StackArithmetic\\StackTest\\StackTestSimple.vm"#"C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\MemoryAccess\\BasicTest" #"..\\..\\MemoryAccess\\BasicTest\\BasicTest.vm"#"file.vm
+#DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\StackArithmetic\\SimpleAdd\\SimpleAdd.vm"
+DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\StackArithmetic\\StackTest\\StackTest.vm"#"C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\MemoryAccess\\BasicTest" #"..\\..\\MemoryAccess\\BasicTest\\BasicTest.vm"#"file.vm
 # "#"test\\underflow.vm"
 DEFAULT_VM_DIR = "..\\..\\MemoryAccess\\BasicTest"
 
