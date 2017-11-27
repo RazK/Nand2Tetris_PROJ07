@@ -51,11 +51,10 @@ class CodeWriter:
         if segment in [CONSTANT_SEG_NAME]:
             self.__saveValueInTemp(index)
             # refer segment + index to the emulated memory
-            segment = TEMP
-            index = INDEX_0
-
-        # Load A with the specified address
-        self.__writeLoadAddress(segment, index)
+            self.__writeLine(LOAD_A + TEMP_0)
+        else:
+            # Load A with the specified address
+            self.__writeLoadAddress(segment, index)
 
         # Fetch the value at the specified address
         self.__writeLine(D_REG + ASSIGN + M_REG)
@@ -109,6 +108,10 @@ class CodeWriter:
             raise OverflowError("Pop operation will result in stack "
                                 "underflow!")
 
+        if segment in [CONSTANT_SEG_NAME]:
+            # Can't pop to constant segment
+            raise ValueError(POP_FROM_CONSTANT_MSG)
+
         # Save pop destination address in temp
         self.__writeLoadAddress(segment, index)
         self.__writeLine(D_REG + ASSIGN + A_REG)
@@ -147,9 +150,6 @@ class CodeWriter:
         if operation == C_PUSH:
             self.__writePush(segment, index)
         elif operation == C_POP:
-            if segment == CONSTANT_SEG_NAME:
-                # Can't pop to constant segment
-                raise ValueError(POP_FROM_CONSTANT_MSG)
             self.__writePop(segment, index)
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
