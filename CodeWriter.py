@@ -305,7 +305,7 @@ class CodeWriter:
 
         # Add offset if exists
         if (index != 0):
-            self.__writeLine(D_REG + ASSIGN + M_REG)
+            self.__writeLine(D_REG + ASSIGN + A_REG)
             self.__writeLine(LOAD_A + str(index).strip("\n"))
             self.__writeLine(A_REG + ASSIGN + D_REG + ADD + A_REG)
 
