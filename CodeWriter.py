@@ -40,6 +40,9 @@ class CodeWriter:
         :param segment: segment name
         :param index: offset within the segment
         """
+        # Write comment in output
+        self.writeComment("__writePush")
+
         # Prevent stack overflows
         if (self.__stackSize >= STACK_SIZE):
             raise OverflowError("Push operation will result in stack "
@@ -98,6 +101,9 @@ class CodeWriter:
         :param segment: segment name
         :param index: offset within the segment
         """
+        # Write comment in output
+        self.writeComment("__writePop")
+
         # Prevent stack underflows
         if (self.__stackSize <= 0):
             raise OverflowError("Pop operation will result in stack "
@@ -154,6 +160,8 @@ class CodeWriter:
         to the output file.
         :param operation: add , sub , or, and  operation in assembly.
         """
+        # Write comment in output
+        self.writeComment("__writeBinary")
 
         # Pops x and y from the stack and saves them in the temp
         # segment:
@@ -175,6 +183,8 @@ class CodeWriter:
         to the output file.
         :param operation: Either not or neg in assembly.
         """
+        # Write comment in output
+        self.writeComment("__writeUnary")
 
         # Extracts the value in the topmost stack cell and keeps it in temp.
         self.__writePop(TEMP, INDEX_0)
@@ -205,6 +215,9 @@ class CodeWriter:
         to the output file.
         :param operation: eq, gt, lt.
         """
+        # Write comment in output
+        self.writeComment("__writeComparative")
+
         # TODO: RazK: Prevent integer overflow/underflow
         # Subtracting the values in the two topmost cells:
         self.__writeBinary(SUB)
@@ -243,6 +256,9 @@ class CodeWriter:
         arithmetic operation.
         :param operation: The arithmetic command to be translated.
         """
+        # Write comment in output
+        self.writeComment("writeArithmetic")
+
         if operation in A_OPERATIONS_BINARY:
             self.__writeBinary(operation)
 
@@ -260,6 +276,10 @@ class CodeWriter:
         Saves the given value in the temp register.
         :param value: Numeric value to save in the temp register
         """
+
+        # Write comment in output
+        self.writeComment("__saveValueInTemp")
+
         safe_value = twosComplement(value)
         self.__writeLine(LOAD_A + safe_value)
         self.__writeLine(D_REG + ASSIGN + A_REG)
@@ -276,6 +296,9 @@ class CodeWriter:
         in the SEGMENTS dict)
         :param index: Offset relative to the given segment.
         """
+        # Write comment in output
+        self.writeComment("__writeLoadAddress")
+
         # TODO: RazK: Check parameters validity
         # Load A reg with the specified segment address
         self.__writeLine(LOAD_A + SEGMENTS[segment])
