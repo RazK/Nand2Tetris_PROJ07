@@ -194,15 +194,10 @@ class CodeWriter:
         # Write comment in output
         self.writeComment("__writeUnary")
 
-        # Extracts the value in the topmost stack cell and keeps it in temp.
-        self.__writePop(TEMP, INDEX_0)
-
-        # Does the calculation:
-        self.__writeLine(LOAD_A + TEMP_0)
+        # Manipulate directly on the stack (omg):
+        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(LOAD_A + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + operation + M_REG)
-
-        # Pushes the result back to the stack:
-        self.__writePush(TEMP, INDEX_0)
 
     def __uniqueLabel(self, label):
         """
