@@ -350,7 +350,7 @@ class CodeWriter:
     def writeArithmetic(self, operation):
         """
         Writes the assembly code that is the translation of the given
-        arithmetic operation.
+        arithmetic operation
         :param operation: The arithmetic command to be translated.
         """
         # Write comment in output
