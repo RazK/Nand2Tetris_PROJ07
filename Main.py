@@ -6,10 +6,8 @@ from Utils import *
 
 VM_EXTENSION = ".vm"
 ASM_EXTENSION = ".asm"
-#DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07
-# \\StackArithmetic\\SimpleAdd\\SimpleAdd.vm"
-DEFAULT_VM_FILE = "..\\..\\StackArithmetic\\StackTest\\StackTestSmall.vm"#"C
-# :\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\MemoryAccess\\BasicTest" #"..\\..\\MemoryAccess\\BasicTest\\BasicTest.vm"#"file.vm
+#DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\StackArithmetic\\SimpleAdd\\SimpleAdd.vm"
+DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\StackArithmetic\\SimpleAdd\\SimpleAdd.vm"#"C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\MemoryAccess\\BasicTest" #"..\\..\\MemoryAccess\\BasicTest\\BasicTest.vm"#"file.vm
 # "#"test\\underflow.vm"
 DEFAULT_VM_DIR = "..\\..\\MemoryAccess\\BasicTest"
 
@@ -61,6 +59,7 @@ def translate(sources, output):
             # Open source for translation, output file for writing
             with open(sourcefile, 'r') as source:
                 parser = Parser(source)
+                writer.setFileName(os.path.basename(sourcefile))
                 writer.writeComment("FILE: {}".format(sourcefile))
 
                 # Parse each command line in the source and translate

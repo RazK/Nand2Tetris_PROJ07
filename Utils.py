@@ -75,32 +75,38 @@ A_OPERATIONS_ANY = A_OPERATIONS.values()
 
 # MEMORY ALIASES
 SP = "R0"
-LCL = "R1"
-ARG = "R2"
-THIS = "R3"
-THAT = "R4"
-TEMP = "5"
+LCL_SEG_ADDR = "R1"
+ARG_SEG_ADDR = "R2"
+THIS_SEG_ADDR = "3"
+THAT_SEG_ADDR = "R4"
+TEMP_SEG_ADDR = "5"
 TEMP_0 = "5"
 TEMP_1 = "6"
-CONSTANT = TEMP
-POINTER = THIS
+CONSTANT_SEG_ADDR = TEMP_SEG_ADDR
+POINTER_SEG_ADDR = THIS_SEG_ADDR
 # TODO: RazK: fix real value for STATIC
-STATIC = "Ben El" # LOL
+STATIC_SEG_ADDR = "Ben El" # LOL
+
+CONSTANT_SEG_NAME = "constant"
+TEMP_SEG_NAME = "temp"
+POINTER_SEG_NAME = "pointer"
+ARG_SEG_NAME = "argument"
+LCL_SEG_NAME = "local"
+STATIC_SEG_NAME = "static"
+THIS_SEG_NAME = "this"
+THAT_SEG_NAME = "that"
 
 # SEGMENTS PREDEFINED ADDRESSES
-# TODO: RazK, Noy: Update segments with real values
-SEGMENTS = {
-    "argument": ARG,
-    "local": LCL,
-    "static": STATIC,
-    "constant": CONSTANT,
-    "this": THIS,
-    "that": THAT,
-    "pointer": POINTER,  # Memory Segments Mapping (Book page 118)
-    "temp": TEMP,
-    TEMP : TEMP
+SEGMENTS_NAME_TO_ADDR = {
+    ARG_SEG_NAME : ARG_SEG_ADDR,
+    LCL_SEG_NAME : LCL_SEG_ADDR,
+    STATIC_SEG_NAME : STATIC_SEG_ADDR,
+    CONSTANT_SEG_NAME : CONSTANT_SEG_ADDR,
+    THIS_SEG_NAME : THIS_SEG_ADDR,
+    THAT_SEG_NAME : THAT_SEG_ADDR,
+    POINTER_SEG_NAME : POINTER_SEG_ADDR,  # Memory Segments Mapping (Book page 118)
+    TEMP_SEG_NAME : TEMP_SEG_ADDR,
 }
-CONSTANT_SEG_NAME = "constant"
 INDEX_0 = 0
 INDEX_1 = 1
 
