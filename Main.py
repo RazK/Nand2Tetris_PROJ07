@@ -59,6 +59,7 @@ def translate(sources, output):
             # Open source for translation, output file for writing
             with open(sourcefile, 'r') as source:
                 parser = Parser(source)
+                writer.setFileName(os.path.basename(sourcefile))
                 writer.writeComment("FILE: {}".format(sourcefile))
 
                 # Parse each command line in the source and translate

@@ -1,5 +1,6 @@
 from Utils import *
 
+STATIC_VAR_NAME = "var"
 
 class CodeWriter:
     def __init__(self, outfile):
@@ -9,6 +10,7 @@ class CodeWriter:
         self.__output = outfile
         self.__stackSize = 0
         self.__unique_id = 0
+        self.__current_file_name = None
 
 
     def setFileName(self, file_name):
@@ -20,7 +22,7 @@ class CodeWriter:
         is started.
         :param file_name: The name of the output file.
         """
-        pass
+        self.__current_file_name = file_name
 
     def __writeLine(self, line, comment_suffix=None):
         """
@@ -33,11 +35,11 @@ class CodeWriter:
             suffix = ''
         self.__output.write("{}{}\n".format(line, suffix))
 
-    def __writePush(self, segment, index):
+    def __writePush(self, segment_name, index):
         """
         Writes the assembly code that pushes the value at the given segment
         with the given index to the top of the stack .
-        :param segment: segment name
+        :param segment_name: segment name
         :param index: offset within the segment
         """
         # Write comment in output
@@ -48,17 +50,23 @@ class CodeWriter:
             raise OverflowError("Push operation will result in stack "
                                 "overflow!")
         # Emulate memory address for constant using temp
-        if segment in [CONSTANT_SEG_NAME]:
+        if segment_name in [CONSTANT_SEG_NAME]:
             self.__saveValueInTemp(index)
             # refer segment + index to the emulated memory
             self.__writeLine(LOAD_A + TEMP_0)
 
-        elif segment in [TEMP_SEG_NAME]:
-            self.__writeLine(LOAD_A + str(int(TEMP) + int(index)))
+        elif segment_name in [TEMP_SEG_NAME, POINTER_SEG_NAME]:
+            # Statically find address
+            seg_addr = SEGMENTS_NAME_TO_ADDR[segment_name]
+            self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
+
+        elif segment_name in [STATIC_SEG_NAME]:
+            self.__writeLine(LOAD_A +
+                             self.__appendFilenameToVarname(str(index)))
 
         else:
             # Load A with the specified address
-            self.__writeLoadAddress(segment, index)
+            self.__writeLoadAddress(segment_name, index)
 
         # Fetch the value at the specified address
         self.__writeLine(D_REG + ASSIGN + M_REG)
@@ -73,35 +81,11 @@ class CodeWriter:
         self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)
         self.__stackSize += 1
 
-    # def __writePop(self, segment, index):
-    #     """
-    #     Writes the assembly code that pops the value at the top of the stack to
-    #     the given segment at the given index.
-    #     :param segment: segment name
-    #     :param index: offset within the segment
-    #     """
-    #     # Prevent stack underflows
-    #     if (self.__stackSize <= 0):
-    #         raise OverflowError("Pop operation will result in stack "
-    #                             "underflow!")
-    #
-    #     # Decrements SP and extracts the topmost value of the stack:
-    #     self.__writeLine(LOAD_A + SP)
-    #     self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)
-    #     self.__writeLine(A_REG + ASSIGN + M_REG)
-    #     self.__writeLine(D_REG + ASSIGN + M_REG)
-    #     self.__stackSize -= 1
-    #
-    #     # Load A with the specified address:
-    #     self.__writeLoadAddress(segment, index)
-    #
-    #     # Writes the extracted value to the wanted segment:
-    #     self.__writeLine(M_REG + ASSIGN + D_REG)
-    def __writePop(self, segment, index):
+    def __writePop(self, segment_name, index):
         """
         Writes the assembly code that pops the value at the top of the stack to
         the given segment at the given index.
-        :param segment: segment name
+        :param segment_name: segment name
         :param index: offset within the segment
         """
         # Write comment in output
@@ -112,22 +96,27 @@ class CodeWriter:
             raise OverflowError("Pop operation will result in stack "
                                 "underflow!")
 
-        if segment in [CONSTANT_SEG_NAME]:
+        if segment_name in [CONSTANT_SEG_NAME]:
             # Can't pop to constant segment
             raise ValueError(POP_FROM_CONSTANT_MSG)
 
         # Save pop destination address in A
-        elif segment in [TEMP_SEG_NAME]:
+        elif segment_name in [TEMP_SEG_NAME, POINTER_SEG_NAME]:
             # Statically find address
-            self.__writeLine(LOAD_A + str(int(TEMP)+int(index)))
+            seg_addr = SEGMENTS_NAME_TO_ADDR[segment_name]
+            self.__writeLine(LOAD_A + str(int(seg_addr)+int(index)))
+
+        elif segment_name in [STATIC_SEG_NAME]:
+            self.__writeLine(LOAD_A +
+                             self.__appendFilenameToVarname(str(index)))
 
         else:
             # Dynamically resolve address
-            self.__writeLoadAddress(segment, index)
+            self.__writeLoadAddress(segment_name, index)
 
         # Keep destination in temp
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + TEMP)
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDR)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
         # Decrements SP and extracts the topmost value of the stack to D:
@@ -138,7 +127,7 @@ class CodeWriter:
         self.__stackSize -= 1
 
         # Write the popped value (in D) to the destination (in temp)
-        self.__writeLine(LOAD_A + TEMP)
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDR)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
@@ -149,20 +138,20 @@ class CodeWriter:
         """
         self.__writeLine("// {}".format(comment))
 
-    def writePushPop(self, operation, segment, index):
+    def writePushPop(self, operation, segment_name, index):
         """
         Writes the assembly code that is the translation of the given
         operation, where the operation is either C_PUSH or C_POP.
         :param operation: either C_PUSH or C_POP
-        :param segment: either ARG, THAT, THIS, LCL,
+        :param segment_name: either ARG, THAT, THIS, LCL,
         :param index: The index of the wanted register in the segment.
         """
 
         # Write the appropriate command
         if operation == C_PUSH:
-            self.__writePush(segment, index)
+            self.__writePush(segment_name, index)
         elif operation == C_POP:
-            self.__writePop(segment, index)
+            self.__writePop(segment_name, index)
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
 
@@ -206,7 +195,7 @@ class CodeWriter:
         Adds a unique id to the given label to prevent collisions with other
         labels carrying the same name.
         Example:
-            localizeLabel("TRUE") --> "TRUE_1"
+            __uniqueLabel("TRUE") --> "TRUE_1"
         :param label: label to localize
         :return: Given label with a unique identifier.
         """
@@ -214,16 +203,40 @@ class CodeWriter:
         self.__unique_id += 1
         return unique_label
 
-    def __writeComparative(self, operation):
+    def __appendFilenameToVarname(self, varname):
+        """
+        Appends the name of the current file before the given variable's name.
+        Example:
+            Filename = "Foo.vm"
+            __appendFilenameToVarname("bar") --> "Foo.bar"
+        :param varname:
+        :return: the name of the variable appended with the current filename.
+        """
+        # Extract the filename without the extension
+        base = self.__current_file_name.split(".")[0]
+        return "{}.{}".format(base, varname)
+
+    def __isNegative(self):
+        """
+        Compares the value in a cell pointed by A to 0 and keeps the result in
+        temp 0.
+        The result should be 1 if negative and 0 otherwise.
+        """
+
+
+    def __writeComparative(self, operation, overflowSafe=False):
         """
         Translates the operations: x=y, x>y, x<y to assembly, and writes
         to the output file.
         :param operation: eq, gt, lt.
         """
+        # Prevent overflows!
+        if not overflowSafe:
+            self.__checkOverflow()
+
         # Write comment in output
         self.writeComment("__writeComparative")
 
-        # TODO: RazK: Prevent integer overflow/underflow
         # Subtracting the values in the two topmost cells:
         self.__writeBinary(SUB)
 
@@ -306,7 +319,7 @@ class CodeWriter:
 
         # TODO: RazK: Check parameters validity
         # Load A reg with the specified segment address
-        self.__writeLine(LOAD_A + SEGMENTS[segment])
+        self.__writeLine(LOAD_A + SEGMENTS_NAME_TO_ADDR[segment])
 
         # Add offset if exists
         if (index != 0):
