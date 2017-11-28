@@ -2,7 +2,6 @@ from Utils import *
 
 STATIC_VAR_NAME = "var"
 
-
 class CodeWriter:
     def __init__(self, outfile):
         """
@@ -12,6 +11,7 @@ class CodeWriter:
         self.__stackSize = 0
         self.__unique_id = 0
         self.__current_file_name = None
+
 
     def setFileName(self, file_name):
         # TODO: RazK, Noy: Decide on a naming convention for methods,
@@ -104,7 +104,7 @@ class CodeWriter:
         elif segment_name in [TEMP_SEG_NAME, POINTER_SEG_NAME]:
             # Statically find address
             seg_addr = SEGMENTS_NAME_TO_ADDR[segment_name]
-            self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
+            self.__writeLine(LOAD_A + str(int(seg_addr)+int(index)))
 
         elif segment_name in [STATIC_SEG_NAME]:
             self.__writeLine(LOAD_A +
@@ -172,6 +172,7 @@ class CodeWriter:
         self.__writeLine(A_REG + ASSIGN + A_REG + SUB + ONE)
         self.__writeLine(M_REG + ASSIGN + M_REG + operation + D_REG)
 
+
     def __writeUnary(self, operation):
         """
         Translates the operations: -x, !x to assembly, and writs
@@ -222,82 +223,46 @@ class CodeWriter:
         The result should be 1 if negative and 0 otherwise.
         """
 
+
     def __writeComparative(self, operation, overflowSafe=False):
         """
         Translates the operations: x=y, x>y, x<y to assembly, and writes
         to the output file.
         :param operation: eq, gt, lt.
         """
-        # Prevent overflows!
-        if not overflowSafe:
-            # Extract a,b from stack
-            self.__writePop(TEMP_SEG_NAME, INDEX_5)
-            self.__writePop(TEMP_SEG_NAME, INDEX_6)
+        # Write comment in output
+        self.writeComment("__writeComparative")
 
-            # SafeCompare(a,0) --> Temp3
-            self.__writePush(TEMP_SEG_NAME, INDEX_5)
-            self.__writePush(CONSTANT_SEG_NAME, ZERO)
-            self.__writeComparative(operation, True)
-            self.__writePop(TEMP_SEG_NAME, INDEX_3)
+        # Subtracting the values in the two topmost cells:
+        self.__writeBinary(SUB)
 
-            # SafeCompare(b,0) --> Temp4
-            self.__writePush(TEMP_SEG_NAME, INDEX_6)
-            self.__writePush(CONSTANT_SEG_NAME, ZERO)
-            self.__writeComparative(operation, True)
-            self.__writePop(TEMP_SEG_NAME, INDEX_4)
+        # Keeps the result in Temp 0 segment:
+        self.__writePop(TEMP_SEG_NAME, INDEX_0)
 
-            # SafeCompare(Temp3, Temp4)
-            self.__writePush(TEMP_SEG_NAME, INDEX_3)
-            self.__writePush(TEMP_SEG_NAME, INDEX_4)
-            self.__writeComparative(A_EQ, True)
-            self.__writePop(TEMP_SEG_NAME, INDEX_2)
+        # Initializes Temp 1 to be 0:
+        self.__writeLine(LOAD_A + TEMP_1)
+        self.__writeLine(M_REG + ASSIGN + ZERO)
 
-            # True: SafeCompare(a,b)
-            TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
-            self.__writeLine(declareLabel(TRUE_LABEL))
-            self.__writePush(TEMP_SEG_NAME, INDEX_6)
-            self.__writePush(TEMP_SEG_NAME, INDEX_5)
-            self.__writeComparative(operation, True)
+        # Initializes D with the Subtraction result:
+        self.__writeLine(LOAD_A + TEMP_0)
+        self.__writeLine(D_REG + ASSIGN + M_REG)
 
-            # False: Temp3
-            FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
-            self.__writeLine(declareLabel(FALSE_LABEL))
-            self.__writePush(TEMP_SEG_NAME, INDEX_3)
+        # If the comparision result is T, changes temp 1 to "-1":
+        TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
+        self.__writeLine(LOAD_A + TRUE_LABEL)
+        self.__writeLine(operation)
 
-        else:
-            # Write comment in output
-            self.writeComment("__writeComparative")
+        # Else, it remains "0":
+        FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
+        self.__writeLine(LOAD_A + FALSE_LABEL)
+        self.__writeLine(JUMP)
+        self.__writeLine(declareLabel(TRUE_LABEL))
+        self.__writeLine(LOAD_A + TEMP_1)
+        self.__writeLine(M_REG + ASSIGN + NEG_ONE)
+        self.__writeLine(declareLabel(FALSE_LABEL))
 
-            # Subtracting the values in the two topmost cells:
-            self.__writeBinary(SUB)
-
-            # Keeps the result in Temp 0 segment:
-            self.__writePop(TEMP_SEG_NAME, INDEX_0)
-
-            # Initializes Temp 1 to be 0:
-            self.__writeLine(LOAD_A + TEMP_1)
-            self.__writeLine(M_REG + ASSIGN + ZERO)
-
-            # Initializes D with the Subtraction result:
-            self.__writeLine(LOAD_A + TEMP_0)
-            self.__writeLine(D_REG + ASSIGN + M_REG)
-
-            # If the comparision result is T, changes temp 1 to "-1":
-            TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
-            self.__writeLine(LOAD_A + TRUE_LABEL)
-            self.__writeLine(operation)
-
-            # Else, it remains "0":
-            FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
-            self.__writeLine(LOAD_A + FALSE_LABEL)
-            self.__writeLine(JUMP)
-            self.__writeLine(declareLabel(TRUE_LABEL))
-            self.__writeLine(LOAD_A + TEMP_1)
-            self.__writeLine(M_REG + ASSIGN + NEG_ONE)
-            self.__writeLine(declareLabel(FALSE_LABEL))
-
-            # Pushes the result back to the stack:
-            self.__writePush(TEMP_SEG_NAME, INDEX_COMPARE_RESULT)
+        # Pushes the result back to the stack:
+        self.__writePush(TEMP_SEG_NAME, INDEX_1)
 
     def writeArithmetic(self, operation):
         """
@@ -357,7 +322,6 @@ class CodeWriter:
             self.__writeLine(D_REG + ASSIGN + M_REG)
             self.__writeLine(LOAD_A + str(index).strip("\n"))
             self.__writeLine(A_REG + ASSIGN + D_REG + ADD + A_REG)
-
 
 def main():
     """
