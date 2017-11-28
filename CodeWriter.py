@@ -223,15 +223,98 @@ class CodeWriter:
         The result should be 1 if negative and 0 otherwise.
         """
 
-
     def __writeComparative(self, operation, overflowSafe=False):
         """
         Translates the operations: x=y, x>y, x<y to assembly, and writes
         to the output file.
         :param operation: eq, gt, lt.
         """
-        # Write comment in output
-        self.writeComment("__writeComparative")
+
+        if not overflowSafe:
+
+            # Write comment in output
+            self.writeComment("__writeComparative")
+
+            # Copies x  to temp 2, temp 4:
+            self.__writeLine(LOAD_A + SP)
+            self.__writeLine(A_REG + ASSIGN + M_REG + NEG_ONE)
+            self.__writeLine(D_REG + ASSIGN + M_REG)
+            self.__writeLine(LOAD_A + TEMP_2)
+            self.__writeLine(M_REG + ASSIGN + D_REG)
+            self.__writeLine(LOAD_A + TEMP_4)
+            self.__writeLine(M_REG + ASSIGN + D_REG)
+
+            # Copies y to temp 3, temp 5
+            self.__writeLine(LOAD_A + SP)
+            self.__writeLine(A_REG + ASSIGN + M_REG + NEG_ONE)
+            self.__writeLine(A_REG + ASSIGN + A_REG + NEG_ONE)
+            self.__writeLine(D_REG + ASSIGN + M_REG)
+            self.__writeLine(LOAD_A + TEMP_3)
+            self.__writeLine(M_REG + ASSIGN + D_REG)
+            self.__writeLine(LOAD_A + TEMP_5)
+            self.__writeLine(M_REG + ASSIGN + D_REG)
+
+            # Does a XOR b and store the result in temp 2:
+
+            # Temp 3 AND TEMP 2 ---> TEMP 2
+            self.__writeLine(LOAD_A + TEMP_3)
+            self.__writeLine(D_REG + ASSIGN + M_REG)
+            self.__writeLine(LOAD_A + TEMP_2)
+            self.__writeLine(M_REG + ASSIGN + M_REG + A_AND + D_REG)
+
+            # NOT Temp 2 ---> Temp 2
+            self.__writeLine(LOAD_A + TEMP_2)
+            self.__writeLine(M_REG + ASSIGN + A_NEG + M_REG)
+
+            # Temp 4 OR Temp 5 ---> Temp 4
+            self.__writeLine(LOAD_A + TEMP_5)
+            self.__writeLine(D_REG + ASSIGN + M_REG)
+            self.__writeLine(LOAD_A + TEMP_4)
+            self.__writeLine(M_REG + ASSIGN + M_REG + A_OR + D_REG)
+
+            # Temp 2 AND Temp 4 ---> Temp 2
+            self.__writeLine(LOAD_A + TEMP_4)
+            self.__writeLine(D_REG + ASSIGN + M_REG)
+            self.__writeLine(LOAD_A + TEMP_2)
+            self.__writeLine(M_REG + ASSIGN + M_REG + A_AND + D_REG)
+
+            # Pushes Temp2 and 0 and tests if Temp2<0:
+            self.__writePush(CONSTANT_SEG_NAME, 0)
+            self.__writePush(TEMP_SEG_NAME, TEMP_2)
+            self.__writeComparative(A_GT, True)
+
+            # If the result is 0 there is no overflow danger, else there is.
+            self.__writeLine(LOAD_A + SP)
+            self.__writeLine(D_REG + ASSIGN + M_REG)
+
+            TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
+            self.__writeLine(LOAD_A + TRUE_LABEL)
+            self.__writeLine(A_EQ)
+
+            FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
+            self.__writeLine(LOAD_A + FALSE_LABEL)
+            self.__writeLine(JUMP)
+
+            self.__writeLine(declareLabel(TRUE_LABEL))
+            self.__writeLine(LOAD_A + SP)
+            self.__writeLine(M_REG + ASSIGN + M_REG + NEG_ONE)
+            self.__writeComparative(operation, True)
+
+            self.__writeLine(declareLabel(FALSE_LABEL))
+            self.__writeLine(LOAD_A + SP)
+
+            # Gets the result of Temp2<0 out
+            self.__writeLine(M_REG + ASSIGN + M_REG + NEG_ONE)
+
+            # Puts 0 instead of y:
+            self.__writeLine(LOAD_A + SP)
+            self.__writeLine(A_REG + ASSIGN + M_REG + NEG_ONE)
+            self.__writeLine(M_REG + ASSIGN + ZERO)
+
+            # Computes x op 0 - This is equivalent to the wanted result
+            self.__writeComparative(operation, True)
+
+        # IF OVERFLOW SAFE:
 
         # Subtracting the values in the two topmost cells:
         self.__writeBinary(SUB)
