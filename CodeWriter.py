@@ -294,7 +294,7 @@ class CodeWriter:
         # Write comment in output
         self.writeComment("__saveValueInTemp")
 
-        safe_value = value
+        safe_value = str(value)
         self.__writeLine(LOAD_A + safe_value)
         self.__writeLine(D_REG + ASSIGN + A_REG)
         self.__writeLine(LOAD_A + TEMP_0)
