@@ -264,7 +264,7 @@ class CodeWriter:
 
             # NOT Temp 2 ---> Temp 2
             self.__writeLine(LOAD_A + TEMP_2)
-            self.__writeLine(M_REG + ASSIGN + A_NEG + M_REG)
+            self.__writeLine(M_REG + ASSIGN + A_NOT + M_REG)
 
             # Temp 4 OR Temp 5 ---> Temp 4
             self.__writeLine(LOAD_A + TEMP_5)
@@ -280,11 +280,12 @@ class CodeWriter:
 
             # Pushes Temp2 and 0 and tests if Temp2<0:
             self.__writePush(CONSTANT_SEG_NAME, 0)
-            self.__writePush(TEMP_SEG_NAME, TEMP_2)
+            self.__writePush(TEMP_SEG_NAME, INDEX_2)
             self.__writeComparative(A_GT, True)
 
             # If the result is 0 there is no overflow danger, else there is.
             self.__writeLine(LOAD_A + SP)
+            self.__writeLine(A_REG + ASSIGN + M_REG + NEG_ONE)
             self.__writeLine(D_REG + ASSIGN + M_REG)
 
             TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
@@ -316,36 +317,38 @@ class CodeWriter:
 
         # IF OVERFLOW SAFE:
 
-        # Subtracting the values in the two topmost cells:
-        self.__writeBinary(SUB)
+        else:
 
-        # Keeps the result in Temp 0 segment:
-        self.__writePop(TEMP_SEG_NAME, INDEX_0)
+            # Subtracting the values in the two topmost cells:
+            self.__writeBinary(SUB)
 
-        # Initializes Temp 1 to be 0:
-        self.__writeLine(LOAD_A + TEMP_1)
-        self.__writeLine(M_REG + ASSIGN + ZERO)
+            # Keeps the result in Temp 0 segment:
+            self.__writePop(TEMP_SEG_NAME, INDEX_0)
 
-        # Initializes D with the Subtraction result:
-        self.__writeLine(LOAD_A + TEMP_0)
-        self.__writeLine(D_REG + ASSIGN + M_REG)
+            # Initializes Temp 1 to be 0:
+            self.__writeLine(LOAD_A + TEMP_1)
+            self.__writeLine(M_REG + ASSIGN + ZERO)
 
-        # If the comparision result is T, changes temp 1 to "-1":
-        TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
-        self.__writeLine(LOAD_A + TRUE_LABEL)
-        self.__writeLine(operation)
+            # Initializes D with the Subtraction result:
+            self.__writeLine(LOAD_A + TEMP_0)
+            self.__writeLine(D_REG + ASSIGN + M_REG)
 
-        # Else, it remains "0":
-        FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
-        self.__writeLine(LOAD_A + FALSE_LABEL)
-        self.__writeLine(JUMP)
-        self.__writeLine(declareLabel(TRUE_LABEL))
-        self.__writeLine(LOAD_A + TEMP_1)
-        self.__writeLine(M_REG + ASSIGN + NEG_ONE)
-        self.__writeLine(declareLabel(FALSE_LABEL))
+            # If the comparision result is T, changes temp 1 to "-1":
+            TRUE_LABEL = self.__uniqueLabel(TRUE_ADDRESS)
+            self.__writeLine(LOAD_A + TRUE_LABEL)
+            self.__writeLine(operation)
 
-        # Pushes the result back to the stack:
-        self.__writePush(TEMP_SEG_NAME, INDEX_1)
+            # Else, it remains "0":
+            FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
+            self.__writeLine(LOAD_A + FALSE_LABEL)
+            self.__writeLine(JUMP)
+            self.__writeLine(declareLabel(TRUE_LABEL))
+            self.__writeLine(LOAD_A + TEMP_1)
+            self.__writeLine(M_REG + ASSIGN + NEG_ONE)
+            self.__writeLine(declareLabel(FALSE_LABEL))
+
+            # Pushes the result back to the stack:
+            self.__writePush(TEMP_SEG_NAME, INDEX_1)
 
     def writeArithmetic(self, operation):
         """
