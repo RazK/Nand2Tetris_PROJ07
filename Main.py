@@ -7,7 +7,7 @@ from Utils import *
 VM_EXTENSION = ".vm"
 ASM_EXTENSION = ".asm"
 #DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\StackArithmetic\\SimpleAdd\\SimpleAdd.vm"
-DEFAULT_VM_FILE = "C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\StackArithmetic\\SimpleAdd\\SimpleAdd.vm"#"C:\\Users\\Noy\\Desktop\\nand2tetris\\projects\\07\\MemoryAccess\\BasicTest" #"..\\..\\MemoryAccess\\BasicTest\\BasicTest.vm"#"file.vm
+DEFAULT_VM_FILE = "..\\..\\StackArithmetic\\SimpleAdd"
 # "#"test\\underflow.vm"
 DEFAULT_VM_DIR = "..\\..\\MemoryAccess\\BasicTest"
 
@@ -18,6 +18,7 @@ def main(path):
     """
     # Collect all .vm files to assemble
     sources = None
+    base = os.path.splitext(path)[0]
 
     # Path is a single vm file?
     if os.path.isfile(path):
@@ -31,12 +32,13 @@ def main(path):
     elif os.path.isdir(path):
         sources = [os.path.join(path, f) for f in os.listdir(path) if
                    f.endswith(VM_EXTENSION)]
+        foldername = os.path.basename(os.path.normpath(base))
+        base = os.path.join(base, foldername)
 
     if sources == None:
         raise FileNotFoundError("No {} files found to translate!"
                                 .format(VM_EXTENSION))
 
-    base = os.path.splitext(path)[0]
     output = base + ASM_EXTENSION
 
     # Assemble all files
