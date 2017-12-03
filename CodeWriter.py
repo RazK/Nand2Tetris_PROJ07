@@ -1,6 +1,11 @@
 from Utils import *
 
 STATIC_VAR_NAME = "var"
+NAME_INDEX = 0
+LABEL_INDEX = 1
+SYS_INIT = "sys.init"
+SYS_NUM_ARG = 0
+
 
 class CodeWriter:
     def __init__(self, outfile):
@@ -323,15 +328,96 @@ class CodeWriter:
             self.__writeLine(LOAD_A + str(index).strip("\n"))
             self.__writeLine(A_REG + ASSIGN + D_REG + ADD + A_REG)
 
+    def writeInit(self):
+        """
+        Writes the assembly code that effects the VM initialization
+        (also called bootstrap code).
+        This code should be placed in the ROM beginning in address 0x0000.
+        """
+
+        # Initializes the stack base to be 256:
+        self.__writeLine(LOAD_A + STACK_STANDARD_BASE)
+        self.__writeLine(D_REG + ASSIGN + A_REG)
+        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+
+        # Calls sys.init:
+        self.writeCall(SYS_INIT, SYS_NUM_ARG)
+
+    def writeLabel(self, label):
+        """
+        Writes the assembly code that is the translation of the given
+        label command.
+        :param label:
+        :return:
+        """
+        pass
+
+    def writeGoto(self, label):
+        """
+        Writes the assembly code that is the translation of the given goto
+        command.
+        :param label: The place that we are going to jump to.
+        """
+
+        # Tests if the jump's destination is in the
+        # current translated function:
+        split__label = label.split(LABEL_SPLITTER)
+        if split__label[NAME_INDEX] == self.__current_file_name:
+
+            # Preforms an unconditional jump:
+            self.__writeLine(LOAD_A + split__label[LABEL_INDEX])
+            self.__writeLine(JUMP)
+
+        else:
+            raise ValueError(UNDEFINED_JUMP_DESTINATION_MSG)
+
+
+    def writeIf(self, label):
+        """
+        Writes the assembly code that is the translation of the given
+        if-goto command
+        :param label:
+        :return:
+        """
+        pass
+
+    def writeCall(self, functionName, numArgs):
+        """
+        Writes the assembly code that is the translation of the given Call
+        command.
+        :param functionName:
+        :param numArgs:
+        :return:
+        """
+        pass
+
+    def writeReturn(self):
+        """
+        Writes the assembly code that is the slation of the given Return
+        command.
+        :return:
+        """
+        pass
+
+    def writeFunction(self, functionName, numLocals):
+        """
+        Writes the assembly code that is the trans. of the given Function
+        command.
+        :param functionName:
+        :param numLocals:
+        :return:
+        """
+        pass
+
+
 def main():
     """
     Tests for the CodeWriter module
     """
     with open("file.asm", "w+") as f:
         gustav = CodeWriter(f)
-        gustav.writePushPop(C_PUSH, VM_CONSTANT_SEG, 5)
-        gustav.writePushPop(C_PUSH, VM_CONSTANT_SEG, 3)
-        gustav.writeArithmetic("lt")
+        gustav.writeInit()
         # gustav.writePushPop("C_POP", "static", 17)
 
 
