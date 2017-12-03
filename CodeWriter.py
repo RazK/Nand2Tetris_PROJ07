@@ -323,6 +323,70 @@ class CodeWriter:
             self.__writeLine(LOAD_A + str(index).strip("\n"))
             self.__writeLine(A_REG + ASSIGN + D_REG + ADD + A_REG)
 
+    def writeInit(self):
+        """
+        Writes the assembly code that effects the VM initialization
+        (also called bootstrap code).
+        This code should be placed in the ROM beginning in address 0x0000.
+        :return:
+        """
+        pass
+
+    def writeLabel(self, label):
+        """
+        Writes the assembly code that is the translation of the given
+        label command.
+        :param label:
+        :return:
+        """
+        pass
+
+    def writeGoto(self, label):
+        """
+        Writes the assembly code that is the translation of the given goto
+        command.
+        :param label:
+        :return:
+        """
+        pass
+
+    def writeIf(self, label):
+        """
+        Writes the assembly code that is the translation of the given
+        if-goto command
+        :param label:
+        :return:
+        """
+        pass
+
+    def writeCall(self, functionName, numArgs):
+        """
+        Writes the assembly code that is the translation of the given Call
+        command.
+        :param functionName:
+        :param numArgs:
+        :return:
+        """
+        pass
+
+    def writeReturn(self):
+        """
+        Writes the assembly code that is the slation of the given Return
+        command.
+        :return:
+        """
+        pass
+
+    def writeFunction(self, functionName, numLocals):
+        """
+        Writes the assembly code that is the trans. of the given Function
+        command.
+        :param functionName:
+        :param numLocals:
+        :return:
+        """
+        pass
+
 def main():
     """
     Tests for the CodeWriter module
