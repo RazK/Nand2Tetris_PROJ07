@@ -1,6 +1,11 @@
 from Utils import *
 
 STATIC_VAR_NAME = "var"
+NAME_INDEX = 0
+LABEL_INDEX = 1
+SYS_INIT = "sys.init"
+SYS_NUM_ARG = 0
+
 
 class CodeWriter:
     def __init__(self, outfile):
@@ -11,7 +16,6 @@ class CodeWriter:
         self.__stackSize = 0
         self.__unique_id = 0
         self.__current_file_name = None
-
 
     def setFileName(self, file_name):
         # TODO: RazK, Noy: Decide on a naming convention for methods,
@@ -104,7 +108,7 @@ class CodeWriter:
         elif segment_name in [TEMP_SEG_NAME, POINTER_SEG_NAME]:
             # Statically find address
             seg_addr = SEGMENTS_NAME_TO_ADDR[segment_name]
-            self.__writeLine(LOAD_A + str(int(seg_addr)+int(index)))
+            self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
 
         elif segment_name in [STATIC_SEG_NAME]:
             self.__writeLine(LOAD_A +
@@ -172,7 +176,6 @@ class CodeWriter:
         self.__writeLine(A_REG + ASSIGN + A_REG + SUB + ONE)
         self.__writeLine(M_REG + ASSIGN + M_REG + operation + D_REG)
 
-
     def __writeUnary(self, operation):
         """
         Translates the operations: -x, !x to assembly, and writs
@@ -222,7 +225,6 @@ class CodeWriter:
         temp 0.
         The result should be 1 if negative and 0 otherwise.
         """
-
 
     def __writeComparative(self, operation, overflowSafe=False):
         """
@@ -328,9 +330,16 @@ class CodeWriter:
         Writes the assembly code that effects the VM initialization
         (also called bootstrap code).
         This code should be placed in the ROM beginning in address 0x0000.
-        :return:
         """
-        pass
+
+        # Initializes the stack base to be 256:
+        self.__writeLine(LOAD_A + STACK_STANDARD_BASE)
+        self.__writeLine(D_REG + ASSIGN + A_REG)
+        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+
+        # Calls sys.init:
+        self.writeCall(SYS_INIT, SYS_NUM_ARG)
 
     def writeLabel(self, label):
         """
@@ -345,10 +354,21 @@ class CodeWriter:
         """
         Writes the assembly code that is the translation of the given goto
         command.
-        :param label:
-        :return:
+        :param label: The place that we are going to jump to.
         """
-        pass
+
+        # Tests if the jump's destination is in the
+        # current translated function:
+        split__label = label.split(LABEL_SPLITTER)
+        if split__label[NAME_INDEX] == self.__current_file_name:
+
+            # Preforms an unconditional jump:
+            self.__writeLine(LOAD_A + split__label[LABEL_INDEX])
+            self.__writeLine(JUMP)
+
+        else:
+            raise ValueError(UNDEFINED_JUMP_DESTINATION_MSG)
+
 
     def writeIf(self, label):
         """
@@ -387,15 +407,14 @@ class CodeWriter:
         """
         pass
 
+
 def main():
     """
     Tests for the CodeWriter module
     """
     with open("file.asm", "w+") as f:
         gustav = CodeWriter(f)
-        gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 5)
-        gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 3)
-        gustav.writeArithmetic("lt")
+        gustav.writeInit()
         # gustav.writePushPop("C_POP", "static", 17)
 
 
