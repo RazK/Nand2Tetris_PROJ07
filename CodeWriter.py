@@ -50,17 +50,17 @@ class CodeWriter:
             raise OverflowError("Push operation will result in stack "
                                 "overflow!")
         # Emulate memory address for constant using temp
-        if segment_name in [CONSTANT_SEG_NAME]:
+        if segment_name in [VM_CONSTANT_SEG]:
             self.__saveValueInTemp(index)
             # refer segment + index to the emulated memory
-            self.__writeLine(LOAD_A + TEMP_0)
+            self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
 
-        elif segment_name in [TEMP_SEG_NAME, POINTER_SEG_NAME]:
+        elif segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
-            seg_addr = SEGMENTS_NAME_TO_ADDR[segment_name]
+            seg_addr = VM_SEGMENT_2_ADDRESS[segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
 
-        elif segment_name in [STATIC_SEG_NAME]:
+        elif segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
                              self.__appendFilenameToVarname(str(index)))
 
@@ -81,11 +81,11 @@ class CodeWriter:
         self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)
         self.__stackSize += 1
 
-    def __writePop(self, segment_name, index):
+    def __writePop(self, vm_segment_name, index):
         """
         Writes the assembly code that pops the value at the top of the stack to
         the given segment at the given index.
-        :param segment_name: segment name
+        :param vm_segment_name: segment name in vm language
         :param index: offset within the segment
         """
         # Write comment in output
@@ -96,27 +96,27 @@ class CodeWriter:
             raise OverflowError("Pop operation will result in stack "
                                 "underflow!")
 
-        if segment_name in [CONSTANT_SEG_NAME]:
+        if vm_segment_name in [VM_CONSTANT_SEG]:
             # Can't pop to constant segment
             raise ValueError(POP_FROM_CONSTANT_MSG)
 
         # Save pop destination address in A
-        elif segment_name in [TEMP_SEG_NAME, POINTER_SEG_NAME]:
+        elif vm_segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
-            seg_addr = SEGMENTS_NAME_TO_ADDR[segment_name]
+            seg_addr = VM_SEGMENT_2_ADDRESS[vm_segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr)+int(index)))
 
-        elif segment_name in [STATIC_SEG_NAME]:
+        elif vm_segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
                              self.__appendFilenameToVarname(str(index)))
 
         else:
             # Dynamically resolve address
-            self.__writeLoadAddress(segment_name, index)
+            self.__writeLoadAddress(vm_segment_name, index)
 
         # Keep destination in temp
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDR)
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
         # Decrements SP and extracts the topmost value of the stack to D:
@@ -127,7 +127,7 @@ class CodeWriter:
         self.__stackSize -= 1
 
         # Write the popped value (in D) to the destination (in temp)
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDR)
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
@@ -138,20 +138,20 @@ class CodeWriter:
         """
         self.__writeLine("// {}".format(comment))
 
-    def writePushPop(self, operation, segment_name, index):
+    def writePushPop(self, operation, vm_segment_name, index):
         """
         Writes the assembly code that is the translation of the given
         operation, where the operation is either C_PUSH or C_POP.
         :param operation: either C_PUSH or C_POP
-        :param segment_name: either ARG, THAT, THIS, LCL,
+        :param vm_segment_name: either ARG, THAT, THIS, LCL,
         :param index: The index of the wanted register in the segment.
         """
 
         # Write the appropriate command
         if operation == C_PUSH:
-            self.__writePush(segment_name, index)
+            self.__writePush(vm_segment_name, index)
         elif operation == C_POP:
-            self.__writePop(segment_name, index)
+            self.__writePop(vm_segment_name, index)
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
 
@@ -237,14 +237,14 @@ class CodeWriter:
         self.__writeBinary(SUB)
 
         # Keeps the result in Temp 0 segment:
-        self.__writePop(TEMP_SEG_NAME, INDEX_0)
+        self.__writePop(VM_TEMP_SEG, INDEX_0)
 
         # Initializes Temp 1 to be 0:
-        self.__writeLine(LOAD_A + TEMP_1)
+        self.__writeLine(LOAD_A + TEMP_1_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + ZERO)
 
         # Initializes D with the Subtraction result:
-        self.__writeLine(LOAD_A + TEMP_0)
+        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # If the comparision result is T, changes temp 1 to "-1":
@@ -257,12 +257,12 @@ class CodeWriter:
         self.__writeLine(LOAD_A + FALSE_LABEL)
         self.__writeLine(JUMP)
         self.__writeLine(declareLabel(TRUE_LABEL))
-        self.__writeLine(LOAD_A + TEMP_1)
+        self.__writeLine(LOAD_A + TEMP_1_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + NEG_ONE)
         self.__writeLine(declareLabel(FALSE_LABEL))
 
         # Pushes the result back to the stack:
-        self.__writePush(TEMP_SEG_NAME, INDEX_1)
+        self.__writePush(VM_TEMP_SEG, INDEX_1)
 
     def writeArithmetic(self, operation):
         """
@@ -273,13 +273,13 @@ class CodeWriter:
         # Write comment in output
         self.writeComment("writeArithmetic")
 
-        if operation in A_OPERATIONS_BINARY:
+        if operation in ARITHMETIC_BINARY:
             self.__writeBinary(operation)
 
-        elif operation in A_OPERATIONS_UNARY:
+        elif operation in ARITHMETIC_UNARY:
             self.__writeUnary(operation)
 
-        elif operation in A_OPERATIONS_COMPARE:
+        elif operation in ARITHMETIC_COMPARE:
             self.__writeComparative(operation)
 
         else:
@@ -297,7 +297,7 @@ class CodeWriter:
         safe_value = str(value)
         self.__writeLine(LOAD_A + safe_value)
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + TEMP_0)
+        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
         pass
 
@@ -315,7 +315,7 @@ class CodeWriter:
 
         # TODO: RazK: Check parameters validity
         # Load A reg with the specified segment address
-        self.__writeLine(LOAD_A + SEGMENTS_NAME_TO_ADDR[segment])
+        self.__writeLine(LOAD_A + VM_SEGMENT_2_ADDRESS[segment])
 
         # Add offset if exists
         if (index != 0):
@@ -329,8 +329,8 @@ def main():
     """
     with open("file.asm", "w+") as f:
         gustav = CodeWriter(f)
-        gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 5)
-        gustav.writePushPop(C_PUSH, CONSTANT_SEG_NAME, 3)
+        gustav.writePushPop(C_PUSH, VM_CONSTANT_SEG, 5)
+        gustav.writePushPop(C_PUSH, VM_CONSTANT_SEG, 3)
         gustav.writeArithmetic("lt")
         # gustav.writePushPop("C_POP", "static", 17)
 

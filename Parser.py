@@ -75,11 +75,11 @@ class Parser:
         op = self.__curr_command.split(SPACE)[OPERATION].strip()
 
         # Classify the command:
-        if op in C_OPERATIONS:
-            return C_OPERATIONS[op]
+        if op in VM_OPERATIONS_2_COMMANDS:
+            return VM_OPERATIONS_2_COMMANDS[op]
 
-        elif op in A_OPERATIONS:
-            return A_OPERATIONS[op]
+        elif op in VM_OPERATIONS_2_ARITHMETIC:
+            return VM_OPERATIONS_2_ARITHMETIC[op]
 
         else:
             raise ValueError(NOT_AN_OPERATION_MSG)
@@ -110,7 +110,7 @@ class Parser:
         """
 
         # Tests if the command has a second argument:
-        if self.getOperation() not in C_OPERATIONS_BINARY:
+        if self.getOperation() not in COMMANDS_BINARY:
             raise ValueError(NO_SECOND_ARG_MSG)
 
         # Extracts the second argument:

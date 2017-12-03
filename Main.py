@@ -74,12 +74,12 @@ def translate(sources, output):
                     # Parse command
                     operation = parser.getOperation()
 
-                    if operation in C_OPERATIONS_PUSH_POP:
+                    if operation in COMMANDS_PUSH_POP:
                         segment = parser.arg1()
                         index = parser.arg2()
                         writer.writePushPop(operation, segment, index)
 
-                    elif operation in A_OPERATIONS_ANY:
+                    elif operation in ARITHMETIC_ANY:
                         writer.writeArithmetic(operation)
                     parser.advance()
 
