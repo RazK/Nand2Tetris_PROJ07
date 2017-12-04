@@ -17,7 +17,6 @@ class CodeWriter:
         self.__unique_id = 0
         self.__current_file_name = None
 
-
     def setFileName(self, file_name):
         # TODO: RazK, Noy: Decide on a naming convention for methods,
         # either 'someFuncDoesWhat' or 'some_func_does_what', and refactor all
@@ -67,7 +66,8 @@ class CodeWriter:
 
         elif segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
-                             self.__appendFilenameToVarname(str(index)))
+                             self.__appendFilenameToVarname(str(index),
+                                                            VARIABEL_DELIMITER))
 
         else:
             # Load A with the specified address
@@ -109,11 +109,12 @@ class CodeWriter:
         elif vm_segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
             seg_addr = VM_SEGMENT_2_ADDRESS[vm_segment_name]
-            self.__writeLine(LOAD_A + str(int(seg_addr)+int(index)))
+            self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
 
         elif vm_segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
-                             self.__appendFilenameToVarname(str(index)))
+                             self.__appendFilenameToVarname(str(index),
+                                                            VARIABEL_DELIMITER))
 
         else:
             # Dynamically resolve address
@@ -177,7 +178,6 @@ class CodeWriter:
         self.__writeLine(A_REG + ASSIGN + A_REG + SUB + ONE)
         self.__writeLine(M_REG + ASSIGN + M_REG + operation + D_REG)
 
-
     def __writeUnary(self, operation):
         """
         Translates the operations: -x, !x to assembly, and writs
@@ -204,11 +204,13 @@ class CodeWriter:
         :param label: label to localize
         :return: Given label with a unique identifier.
         """
-        unique_label = "{}_{}".format(self.__unique_id, label)
+        unique_label = "{}{}{}".format(self.__unique_id,
+                                       UNIQUE_DELIMITER,
+                                       label)
         self.__unique_id += 1
         return unique_label
 
-    def __appendFilenameToVarname(self, varname):
+    def __appendFilenameToVarname(self, varname, delimiter):
         """
         Appends the name of the current file before the given variable's name.
         Example:
@@ -218,8 +220,8 @@ class CodeWriter:
         :return: the name of the variable appended with the current filename.
         """
         # Extract the filename without the extension
-        base = self.__current_file_name.split(".")[0]
-        return "{}.{}".format(base, varname)
+        base = self.__current_file_name.split(EXTENSION_DELIMITER)[0]
+        return "{}{}{}".format(base, delimiter, varname)
 
     def __isNegative(self):
         """
@@ -227,7 +229,6 @@ class CodeWriter:
         temp 0.
         The result should be 1 if negative and 0 otherwise.
         """
-
 
     def __writeComparative(self, operation, overflowSafe=False):
         """
@@ -348,10 +349,11 @@ class CodeWriter:
         """
         Writes the assembly code that is the translation of the given
         label command.
-        :param label:
-        :return:
+        :param label: label name to declare
         """
-        pass
+        file_concat_label = self.__appendFilenameToVarname(label,
+                                                           LABEL_DELIMITER)
+        self.__writeLine(declareLabel(file_concat_label))
 
     def writeGoto(self, label):
         """
@@ -362,25 +364,30 @@ class CodeWriter:
 
         # Tests if the jump's destination is in the
         # current translated function:
-        split__label = label.split(LABEL_SPLITTER)
-        if split__label[NAME_INDEX] == self.__current_file_name:
+        split_label = label.split(LABEL_DELIMITER)
+        if split_label[NAME_INDEX] == self.__current_file_name:
 
             # Preforms an unconditional jump:
-            self.__writeLine(LOAD_A + split__label[LABEL_INDEX])
+            self.__writeLine(LOAD_A + split_label[LABEL_INDEX])
             self.__writeLine(JUMP)
 
         else:
             raise ValueError(UNDEFINED_JUMP_DESTINATION_MSG)
 
-
     def writeIf(self, label):
         """
         Writes the assembly code that is the translation of the given
         if-goto command
-        :param label:
-        :return:
+        :param label:   label to jump if the value at the top of the stack is
+                        zero.
         """
-        pass
+        # Pops the value from the top of the stack and compares it to zero
+        self.__writePop(VM_TEMP_SEG)                # Pop --> temp
+        self.__writeLine(LOAD_A, TEMP_SEG_ADDRESS)  # A = temp address
+        self.__writeLine(D_REG + ASSIGN + M_REG)    # D = RAM[temp address]
+        self.__writeLine(LOAD_A + label)            # A = label
+        self.__writeLine(A_EQ)                      # Jump if D == 0
+
 
     def writeCall(self, functionName, numArgs):
         """

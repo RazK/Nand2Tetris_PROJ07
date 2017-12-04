@@ -111,7 +111,8 @@ INDEX_0 = 0
 INDEX_1 = 1
 
 # STACK
-STACK_START_ADDRESS = 256
+STACK_STANDARD_BASE = 256
+STACK_START_ADDRESS = STACK_STANDARD_BASE
 STACK_END_ADDRESS = 2047
 STACK_SIZE = STACK_END_ADDRESS - STACK_START_ADDRESS + 1
 
@@ -139,7 +140,13 @@ ONE = "1"
 NEG_ONE = "-1"
 ZERO = "0"
 
-# MORE:
+# DELIMETERS
+LABEL_DELIMITER = "$"
+VARIABEL_DELIMITER = "."
+EXTENSION_DELIMITER = "."
+UNIQUE_DELIMITER = "_"
+
+# MORE:"
 NEW_LINE = "\n"
 SPACE = " "
 TAB = "\t"
@@ -188,3 +195,4 @@ COMMAND_NOT_SUPPORTED_MSG = "Command is not supported."
 ARG_ASKED_FOR_RETURN_MSG = "The return command has no arguments."
 NO_SECOND_ARG_MSG = "Command has no second argument."
 POP_FROM_CONSTANT_MSG = "Popping to the constant segment is not supported."
+UNDEFINED_JUMP_DESTINATION_MSG = "Jumping to undefined destination"
