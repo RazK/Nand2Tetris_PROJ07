@@ -54,19 +54,20 @@ class CodeWriter:
             raise OverflowError("Push operation will result in stack "
                                 "overflow!")
         # Emulate memory address for constant using temp
-        if segment_name in [CONSTANT_SEG_NAME]:
+        if segment_name in [VM_CONSTANT_SEG]:
             self.__saveValueInTemp(index)
             # refer segment + index to the emulated memory
-            self.__writeLine(LOAD_A + TEMP_0)
+            self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
 
-        elif segment_name in [TEMP_SEG_NAME, POINTER_SEG_NAME]:
+        elif segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
-            seg_addr = SEGMENTS_NAME_TO_ADDR[segment_name]
+            seg_addr = VM_SEGMENT_2_ADDRESS[segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
 
-        elif segment_name in [STATIC_SEG_NAME]:
+        elif segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
-                             self.__appendFilenameToVarname(str(index)))
+                             self.__appendFilenameToVarname(str(index),
+                                                            VARIABEL_DELIMITER))
 
         else:
             # Load A with the specified address
@@ -85,11 +86,11 @@ class CodeWriter:
         self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)
         self.__stackSize += 1
 
-    def __writePop(self, segment_name, index):
+    def __writePop(self, vm_segment_name, index):
         """
         Writes the assembly code that pops the value at the top of the stack to
         the given segment at the given index.
-        :param segment_name: segment name
+        :param vm_segment_name: segment name in vm language
         :param index: offset within the segment
         """
         # Write comment in output
@@ -100,27 +101,28 @@ class CodeWriter:
             raise OverflowError("Pop operation will result in stack "
                                 "underflow!")
 
-        if segment_name in [CONSTANT_SEG_NAME]:
+        if vm_segment_name in [VM_CONSTANT_SEG]:
             # Can't pop to constant segment
             raise ValueError(POP_FROM_CONSTANT_MSG)
 
         # Save pop destination address in A
-        elif segment_name in [TEMP_SEG_NAME, POINTER_SEG_NAME]:
+        elif vm_segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
-            seg_addr = SEGMENTS_NAME_TO_ADDR[segment_name]
+            seg_addr = VM_SEGMENT_2_ADDRESS[vm_segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
 
-        elif segment_name in [STATIC_SEG_NAME]:
+        elif vm_segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
-                             self.__appendFilenameToVarname(str(index)))
+                             self.__appendFilenameToVarname(str(index),
+                                                            VARIABEL_DELIMITER))
 
         else:
             # Dynamically resolve address
-            self.__writeLoadAddress(segment_name, index)
+            self.__writeLoadAddress(vm_segment_name, index)
 
         # Keep destination in temp
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDR)
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
         # Decrements SP and extracts the topmost value of the stack to D:
@@ -131,7 +133,7 @@ class CodeWriter:
         self.__stackSize -= 1
 
         # Write the popped value (in D) to the destination (in temp)
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDR)
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
@@ -142,20 +144,20 @@ class CodeWriter:
         """
         self.__writeLine("// {}".format(comment))
 
-    def writePushPop(self, operation, segment_name, index):
+    def writePushPop(self, operation, vm_segment_name, index):
         """
         Writes the assembly code that is the translation of the given
         operation, where the operation is either C_PUSH or C_POP.
         :param operation: either C_PUSH or C_POP
-        :param segment_name: either ARG, THAT, THIS, LCL,
+        :param vm_segment_name: either ARG, THAT, THIS, LCL,
         :param index: The index of the wanted register in the segment.
         """
 
         # Write the appropriate command
         if operation == C_PUSH:
-            self.__writePush(segment_name, index)
+            self.__writePush(vm_segment_name, index)
         elif operation == C_POP:
-            self.__writePop(segment_name, index)
+            self.__writePop(vm_segment_name, index)
         else:
             raise ValueError(WRONG_COMMAND_TYPE_MSG)
 
@@ -202,11 +204,13 @@ class CodeWriter:
         :param label: label to localize
         :return: Given label with a unique identifier.
         """
-        unique_label = "{}_{}".format(self.__unique_id, label)
+        unique_label = "{}{}{}".format(self.__unique_id,
+                                       UNIQUE_DELIMITER,
+                                       label)
         self.__unique_id += 1
         return unique_label
 
-    def __appendFilenameToVarname(self, varname):
+    def __appendFilenameToVarname(self, varname, delimiter):
         """
         Appends the name of the current file before the given variable's name.
         Example:
@@ -216,8 +220,8 @@ class CodeWriter:
         :return: the name of the variable appended with the current filename.
         """
         # Extract the filename without the extension
-        base = self.__current_file_name.split(".")[0]
-        return "{}.{}".format(base, varname)
+        base = self.__current_file_name.split(EXTENSION_DELIMITER)[0]
+        return "{}{}{}".format(base, delimiter, varname)
 
     def __isNegative(self):
         """
@@ -239,14 +243,14 @@ class CodeWriter:
         self.__writeBinary(SUB)
 
         # Keeps the result in Temp 0 segment:
-        self.__writePop(TEMP_SEG_NAME, INDEX_0)
+        self.__writePop(VM_TEMP_SEG, INDEX_0)
 
         # Initializes Temp 1 to be 0:
-        self.__writeLine(LOAD_A + TEMP_1)
+        self.__writeLine(LOAD_A + TEMP_1_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + ZERO)
 
         # Initializes D with the Subtraction result:
-        self.__writeLine(LOAD_A + TEMP_0)
+        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # If the comparision result is T, changes temp 1 to "-1":
@@ -259,12 +263,12 @@ class CodeWriter:
         self.__writeLine(LOAD_A + FALSE_LABEL)
         self.__writeLine(JUMP)
         self.__writeLine(declareLabel(TRUE_LABEL))
-        self.__writeLine(LOAD_A + TEMP_1)
+        self.__writeLine(LOAD_A + TEMP_1_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + NEG_ONE)
         self.__writeLine(declareLabel(FALSE_LABEL))
 
         # Pushes the result back to the stack:
-        self.__writePush(TEMP_SEG_NAME, INDEX_1)
+        self.__writePush(VM_TEMP_SEG, INDEX_1)
 
     def writeArithmetic(self, operation):
         """
@@ -275,13 +279,13 @@ class CodeWriter:
         # Write comment in output
         self.writeComment("writeArithmetic")
 
-        if operation in A_OPERATIONS_BINARY:
+        if operation in ARITHMETIC_BINARY:
             self.__writeBinary(operation)
 
-        elif operation in A_OPERATIONS_UNARY:
+        elif operation in ARITHMETIC_UNARY:
             self.__writeUnary(operation)
 
-        elif operation in A_OPERATIONS_COMPARE:
+        elif operation in ARITHMETIC_COMPARE:
             self.__writeComparative(operation)
 
         else:
@@ -299,7 +303,7 @@ class CodeWriter:
         safe_value = str(value)
         self.__writeLine(LOAD_A + safe_value)
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + TEMP_0)
+        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
         pass
 
@@ -317,7 +321,7 @@ class CodeWriter:
 
         # TODO: RazK: Check parameters validity
         # Load A reg with the specified segment address
-        self.__writeLine(LOAD_A + SEGMENTS_NAME_TO_ADDR[segment])
+        self.__writeLine(LOAD_A + VM_SEGMENT_2_ADDRESS[segment])
 
         # Add offset if exists
         if (index != 0):
@@ -345,10 +349,11 @@ class CodeWriter:
         """
         Writes the assembly code that is the translation of the given
         label command.
-        :param label:
-        :return:
+        :param label: label name to declare
         """
-        pass
+        file_concat_label = self.__appendFilenameToVarname(label,
+                                                           LABEL_DELIMITER)
+        self.__writeLine(declareLabel(file_concat_label))
 
     def writeGoto(self, label):
         """
@@ -359,25 +364,30 @@ class CodeWriter:
 
         # Tests if the jump's destination is in the
         # current translated function:
-        split__label = label.split(LABEL_SPLITTER)
-        if split__label[NAME_INDEX] == self.__current_file_name:
+        split_label = label.split(LABEL_DELIMITER)
+        if split_label[NAME_INDEX] == self.__current_file_name:
 
             # Preforms an unconditional jump:
-            self.__writeLine(LOAD_A + split__label[LABEL_INDEX])
+            self.__writeLine(LOAD_A + split_label[LABEL_INDEX])
             self.__writeLine(JUMP)
 
         else:
             raise ValueError(UNDEFINED_JUMP_DESTINATION_MSG)
 
-
     def writeIf(self, label):
         """
         Writes the assembly code that is the translation of the given
         if-goto command
-        :param label:
-        :return:
+        :param label:   label to jump if the value at the top of the stack is
+                        zero.
         """
-        pass
+        # Pops the value from the top of the stack and compares it to zero
+        self.__writePop(VM_TEMP_SEG)                # Pop --> temp
+        self.__writeLine(LOAD_A, TEMP_SEG_ADDRESS)  # A = temp address
+        self.__writeLine(D_REG + ASSIGN + M_REG)    # D = RAM[temp address]
+        self.__writeLine(LOAD_A + label)            # A = label
+        self.__writeLine(A_EQ)                      # Jump if D == 0
+
 
     def writeCall(self, functionName, numArgs):
         """
