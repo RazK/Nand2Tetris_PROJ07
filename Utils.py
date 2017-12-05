@@ -42,9 +42,13 @@ A_AND = "&"
 A_OR = "|"
 A_NEG = " -" # Important! should be different than '-', collides with A_SUB!
 A_NOT = "!"
-A_EQ = "D;JEQ"
-A_LT = "D;JLT"
 A_GT = "D;JGT"
+A_EQ = "D;JEQ"
+A_GE = "D;JGE"
+A_LT = "D;JLT"
+A_NE = "D;JNE"
+A_LE = "D;JLE"
+A_JUMP = "D;JMP"
 
 # ARITHMETIC WITH 2 ARGS:
 ARITHMETIC_BINARY = [A_ADD, A_SUB, A_AND, A_OR]
@@ -159,7 +163,6 @@ TRUE_ADDRESS = "TRUE"
 FALSE_ADDRESS = "FALSE"
 TRUE_TAG = "(TRUE)"
 FALSE_TAG = "(FALSE)"
-JUMP = "D;JMP"
 
 def declareLabel(label):
     """

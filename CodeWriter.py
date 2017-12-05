@@ -261,7 +261,7 @@ class CodeWriter:
         # Else, it remains "0":
         FALSE_LABEL = self.__uniqueLabel(FALSE_ADDRESS)
         self.__writeLine(LOAD_A + FALSE_LABEL)
-        self.__writeLine(JUMP)
+        self.__writeLine(A_JUMP)
         self.__writeLine(declareLabel(TRUE_LABEL))
         self.__writeLine(LOAD_A + TEMP_1_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + NEG_ONE)
@@ -369,7 +369,7 @@ class CodeWriter:
 
             # Preforms an unconditional jump:
             self.__writeLine(LOAD_A + split_label[LABEL_INDEX])
-            self.__writeLine(JUMP)
+            self.__writeLine(A_JUMP)
 
         else:
             raise ValueError(UNDEFINED_JUMP_DESTINATION_MSG)
@@ -382,11 +382,11 @@ class CodeWriter:
                         zero.
         """
         # Pops the value from the top of the stack and compares it to zero
-        self.__writePop(VM_TEMP_SEG, INDEX_0)                # Pop --> temp
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)  # @temp address
-        self.__writeLine(D_REG + ASSIGN + M_REG)    # D = RAM[temp address]
+        self.__writePop(VM_TEMP_SEG, INDEX_0)       # Pop --> temp
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS) # @temp
+        self.__writeLine(D_REG + ASSIGN + M_REG)    # D = RAM[temp]
         self.__writeLine(LOAD_A + label)            # @label
-        self.__writeLine(A_EQ)                      # Jump if D == 0
+        self.__writeLine(A_NE)                      # Jump if D != 0
 
 
     def writeCall(self, functionName, numArgs):
