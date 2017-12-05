@@ -66,8 +66,8 @@ class CodeWriter:
 
         elif segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
-                             self.__appendFilenameToVarname(str(index),
-                                                            VARIABEL_DELIMITER))
+                             self.__appendFilenameToText(str(index),
+                                                         VARIABLE_DELIMITER))
 
         else:
             # Load A with the specified address
@@ -113,8 +113,8 @@ class CodeWriter:
 
         elif vm_segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
-                             self.__appendFilenameToVarname(str(index),
-                                                            VARIABEL_DELIMITER))
+                             self.__appendFilenameToText(str(index),
+                                                         VARIABLE_DELIMITER))
 
         else:
             # Dynamically resolve address
@@ -210,18 +210,18 @@ class CodeWriter:
         self.__unique_id += 1
         return unique_label
 
-    def __appendFilenameToVarname(self, varname, delimiter):
+    def __appendFilenameToText(self, text, delimiter):
         """
         Appends the name of the current file before the given variable's name.
         Example:
             Filename = "Foo.vm"
-            __appendFilenameToVarname("bar", '%') --> "Foo%bar"
-        :param varname:
+            __appendFilenameToText("bar", '%') --> "Foo%bar"
+        :param text:
         :return: the name of the variable appended with the current filename.
         """
         # Extract the filename without the extension
         base = self.__current_file_name.split(EXTENSION_DELIMITER)[0]
-        return "{}{}{}".format(base, delimiter, varname)
+        return "{}{}{}".format(base, delimiter, text)
 
     def __isNegative(self):
         """
@@ -351,8 +351,8 @@ class CodeWriter:
         label command.
         :param label: label name to declare
         """
-        file_concat_label = self.__appendFilenameToVarname(label,
-                                                           LABEL_DELIMITER)
+        file_concat_label = self.__appendFilenameToText(label,
+                                                        LABEL_DELIMITER)
         self.__writeLine(declareLabel(file_concat_label))
 
     def writeGoto(self, label):
@@ -364,11 +364,12 @@ class CodeWriter:
 
         # Tests if the jump's destination is in the
         # current translated function:
-        split_label = label.split(LABEL_DELIMITER)
-        if split_label[NAME_INDEX] == self.__current_file_name:
+        file_appended_label = self.__appendFilenameToText(label,
+                                                          LABEL_DELIMITER)
+        if file_appended_label[NAME_INDEX] == self.__current_file_name:
 
             # Preforms an unconditional jump:
-            self.__writeLine(LOAD_A + split_label[LABEL_INDEX])
+            self.__writeLine(LOAD_A + file_appended_label[LABEL_INDEX])
             self.__writeLine(A_JUMP)
 
         else:
@@ -382,12 +383,12 @@ class CodeWriter:
                         zero.
         """
         # Pops the value from the top of the stack and compares it to zero
-        self.__writePop(VM_TEMP_SEG, INDEX_0)       # Pop --> temp
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS) # @temp
-        self.__writeLine(D_REG + ASSIGN + M_REG)    # D = RAM[temp]
-        self.__writeLine(LOAD_A + label)            # @label
-        self.__writeLine(A_NE)                      # Jump if D != 0
-
+        file_appended_label = self.__appendFilenameToText(label, LABEL_DELIMITER)
+        self.__writePop(VM_TEMP_SEG, INDEX_0)           # Pop --> temp
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)     # @temp
+        self.__writeLine(D_REG + ASSIGN + M_REG)        # D = RAM[temp]
+        self.__writeLine(LOAD_A + file_appended_label)  # @filename$label
+        self.__writeLine(A_NE)                          # Jump if D != 0
 
     def writeCall(self, functionName, numArgs):
         """
