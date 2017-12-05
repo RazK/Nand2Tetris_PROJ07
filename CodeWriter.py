@@ -383,9 +383,9 @@ class CodeWriter:
         """
         # Pops the value from the top of the stack and compares it to zero
         self.__writePop(VM_TEMP_SEG, INDEX_0)                # Pop --> temp
-        self.__writeLine(LOAD_A, TEMP_SEG_ADDRESS)  # A = temp address
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)  # @temp address
         self.__writeLine(D_REG + ASSIGN + M_REG)    # D = RAM[temp address]
-        self.__writeLine(LOAD_A + label)            # A = label
+        self.__writeLine(LOAD_A + label)            # @label
         self.__writeLine(A_EQ)                      # Jump if D == 0
 
 
