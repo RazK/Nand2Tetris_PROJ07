@@ -215,7 +215,7 @@ class CodeWriter:
         Appends the name of the current file before the given variable's name.
         Example:
             Filename = "Foo.vm"
-            __appendFilenameToVarname("bar") --> "Foo.bar"
+            __appendFilenameToVarname("bar", '%') --> "Foo%bar"
         :param varname:
         :return: the name of the variable appended with the current filename.
         """
@@ -382,7 +382,7 @@ class CodeWriter:
                         zero.
         """
         # Pops the value from the top of the stack and compares it to zero
-        self.__writePop(VM_TEMP_SEG)                # Pop --> temp
+        self.__writePop(VM_TEMP_SEG, INDEX_0)                # Pop --> temp
         self.__writeLine(LOAD_A, TEMP_SEG_ADDRESS)  # A = temp address
         self.__writeLine(D_REG + ASSIGN + M_REG)    # D = RAM[temp address]
         self.__writeLine(LOAD_A + label)            # A = label

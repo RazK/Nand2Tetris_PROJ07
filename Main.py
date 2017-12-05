@@ -81,6 +81,22 @@ def translate(sources, output):
 
                     elif operation in ARITHMETIC_ANY:
                         writer.writeArithmetic(operation)
+
+                    elif operation == C_LABEL:
+                        label = parser.arg1()
+                        writer.writeLabel(label)
+
+                    elif operation == C_GOTO:
+                        label = parser.arg1()
+                        writer.writeGoto(label)
+
+                    elif operation == C_IF:
+                        label = parser.arg1()
+                        writer.writeIf(label)
+
+                    else:
+                        raise ValueError(COMMAND_NOT_YET_IMPLEMENTED)
+
                     parser.advance()
 
             # Flush translation to file

@@ -96,10 +96,10 @@ class Parser:
             raise ValueError(ARG_ASKED_FOR_RETURN_MSG)
 
         elif self.getOperation() is C_ARITHMETIC:
-            return self.__curr_command
+            return self.__curr_command.strip()
 
         # Else, return the first argument of the command:
-        return self.__curr_command.split(SPACE)[ARG1]
+        return self.__curr_command.split(SPACE)[ARG1].strip()
 
     def arg2(self):
         """

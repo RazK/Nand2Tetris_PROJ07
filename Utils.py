@@ -197,3 +197,4 @@ NO_SECOND_ARG_MSG = "Command has no second argument."
 POP_FROM_CONSTANT_MSG = "Popping to the constant segment is not supported."
 UNDEFINED_JUMP_DESTINATION_MSG = "The jump destination must be in the " \
                                  "current function"
+COMMAND_NOT_YET_IMPLEMENTED = "Command not implemented yet!"
