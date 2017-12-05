@@ -82,6 +82,7 @@ THAT_SEG_ADDR = "R4"
 TEMP_SEG_ADDR = "5"
 TEMP_0 = "5"
 TEMP_1 = "6"
+STACK_STANDARD_BASE = "256"
 CONSTANT_SEG_ADDR = TEMP_SEG_ADDR
 POINTER_SEG_ADDR = THIS_SEG_ADDR
 # TODO: RazK: fix real value for STATIC
@@ -146,6 +147,7 @@ TAB = "\t"
 COMMENT_PREFIX = "//"
 EOF = ""
 EMPTY_LINE = ''
+LABEL_SPLITTER = "$"
 
 # CONDITIONS:
 TRUE_ADDRESS = "TRUE"
@@ -188,3 +190,5 @@ COMMAND_NOT_SUPPORTED_MSG = "Command is not supported."
 ARG_ASKED_FOR_RETURN_MSG = "The return command has no arguments."
 NO_SECOND_ARG_MSG = "Command has no second argument."
 POP_FROM_CONSTANT_MSG = "Popping to the constant segment is not supported."
+UNDEFINED_JUMP_DESTINATION_MSG = "The jump destination must be in the " \
+                                 "current function"
