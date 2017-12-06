@@ -16,6 +16,7 @@ class CodeWriter:
         self.__stackSize = 0
         self.__unique_id = 0
         self.__current_file_name = None
+        self.__current_func_name = None
 
     def setFileName(self, file_name):
         # TODO: RazK, Noy: Decide on a naming convention for methods,
@@ -39,12 +40,18 @@ class CodeWriter:
             suffix = ''
         self.__output.write("{}{}\n".format(line, suffix))
 
-    def __writePush(self, segment_name, index):
+    def __writePush(self, vm_segment_name, index):
         """
         Writes the assembly code that pushes the value at the given segment
         with the given index to the top of the stack .
-        :param segment_name: segment name
+        :param vm_segment_name: segment name in vm language
         :param index: offset within the segment
+        Example:
+            LCL      = [ 1 ]
+            RAM[LCL] = [300]
+            RAM[300] = [xxx]
+            writePushSegmentAddress(VM_LCL_SEG)
+            --> pushes xxx, since RAM[RAM[LCL]] = RAM[RAM[1]] = RAM[300] = xxx
         """
         # Write comment in output
         self.writeComment("__writePush")
@@ -54,35 +61,34 @@ class CodeWriter:
             raise OverflowError("Push operation will result in stack "
                                 "overflow!")
         # Emulate memory address for constant using temp
-        if segment_name in [VM_CONSTANT_SEG]:
+        if vm_segment_name in [VM_CONSTANT_SEG]:
             self.__saveValueInTemp(index)
             # refer segment + index to the emulated memory
             self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
 
-        elif segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
+        elif vm_segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
-            seg_addr = VM_SEGMENT_2_ADDRESS[segment_name]
+            seg_addr = VM_SEGMENT_2_ADDRESS[vm_segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
 
-        elif segment_name in [VM_STATIC_SEG]:
+        elif vm_segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
-                             self.__appendFilenameToText(str(index),
-                                                         VARIABLE_DELIMITER))
+                             self.__appendFilenameToText(str(index)))
 
         else:
             # Load A with the specified address
-            self.__writeLoadAddress(segment_name, index)
+            self.__writeLoadAddress(vm_segment_name, index)
 
         # Fetch the value at the specified address
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # Enters the extracted value to the stack:
-        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
         # Increments SP:
-        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
         self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)
         self.__stackSize += 1
 
@@ -113,8 +119,7 @@ class CodeWriter:
 
         elif vm_segment_name in [VM_STATIC_SEG]:
             self.__writeLine(LOAD_A +
-                             self.__appendFilenameToText(str(index),
-                                                         VARIABLE_DELIMITER))
+                             self.__appendFilenameToText(str(index)))
 
         else:
             # Dynamically resolve address
@@ -126,7 +131,7 @@ class CodeWriter:
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
         # Decrements SP and extracts the topmost value of the stack to D:
-        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
         self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(D_REG + ASSIGN + M_REG)
@@ -171,7 +176,7 @@ class CodeWriter:
         self.writeComment("__writeBinary")
 
         # Does the calculation on the stack :)
-        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
         self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(D_REG + ASSIGN + M_REG)
@@ -188,11 +193,11 @@ class CodeWriter:
         self.writeComment("__writeUnary")
 
         # Manipulate directly on the stack (omg):
-        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
         self.__writeLine(M_REG + ASSIGN + M_REG + NEG_ONE)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + operation + M_REG)
-        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
         self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)
 
     def __uniqueLabel(self, label):
@@ -210,18 +215,36 @@ class CodeWriter:
         self.__unique_id += 1
         return unique_label
 
-    def __appendFilenameToText(self, text, delimiter):
+    def __appendFilenameToText(self, text):
         """
         Appends the name of the current file before the given variable's name.
         Example:
             Filename = "Foo.vm"
-            __appendFilenameToText("bar", '%') --> "Foo%bar"
+            __appendFilenameToText("bar") --> "Foo.bar"
         :param text:
         :return: the name of the variable appended with the current filename.
         """
         # Extract the filename without the extension
         base = self.__current_file_name.split(EXTENSION_DELIMITER)[0]
-        return "{}{}{}".format(base, delimiter, text)
+        return "{}{}{}".format(base, LABEL_DELIMITER, text)
+
+    def __appendFileDotFuncToText(self, text):
+        """
+        Appends the name of the current 'filename.function' before the given
+        text.
+        Example:
+            Filename = "Foo.vm"
+            Function = "bar"
+            __appendFilenameToText("CYBER") --> "Foo.bar$CYBER"
+        :param text: inner label
+        :return: the name of the variable appended with the current
+        filename.function
+        """
+        # Extract the filename without the extension
+        base = self.__current_file_name.split(EXTENSION_DELIMITER)[0]
+        func = self.__current_func_name.split()
+        return "{}{}{}{}{}".format(base, FUNCTION_DELIMITER, func,
+                                   INNER_LABEL_DELIMITER, text)
 
     def __isNegative(self):
         """
@@ -307,12 +330,12 @@ class CodeWriter:
         self.__writeLine(M_REG + ASSIGN + D_REG)
         pass
 
-    def __writeLoadAddress(self, segment, index):
+    def __writeLoadAddress(self, vm_segment_name, index):
         """
         Writes the address specified by the given segment with the given
         offset to the A register.
         Notice! D_REG is used here and values it held before the call are LOST!
-        :param segment: Name of the desired segment (should be a key
+        :param vm_segment_name: Name of the desired segment (should be a key
         in the SEGMENTS dict)
         :param index: Offset relative to the given segment.
         """
@@ -321,7 +344,7 @@ class CodeWriter:
 
         # TODO: RazK: Check parameters validity
         # Load A reg with the specified segment address
-        self.__writeLine(LOAD_A + VM_SEGMENT_2_ADDRESS[segment])
+        self.__writeLine(LOAD_A + VM_SEGMENT_2_ADDRESS[vm_segment_name])
 
         # Add offset if exists
         if (index != 0):
@@ -339,7 +362,7 @@ class CodeWriter:
         # Initializes the stack base to be 256:
         self.__writeLine(LOAD_A + STACK_STANDARD_BASE)
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + SP)
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
         # Calls sys.init:
@@ -349,31 +372,36 @@ class CodeWriter:
         """
         Writes the assembly code that is the translation of the given
         label command.
+        Appends the label to filename
+        Example:
+            Filename: foo.vm
+            Label CYBER --> (foo.CYBER)
         :param label: label name to declare
         """
-        file_concat_label = self.__appendFilenameToText(label,
-                                                        LABEL_DELIMITER)
-        self.__writeLine(declareLabel(file_concat_label))
+        file_appended_label = self.__appendFilenameToText(label)
+        self.__writeLine(declareLabel(file_appended_label))
 
-    def writeGoto(self, label):
+    def writeInnerLabel(self, label):
+        """
+        Writes the assembly code that is the translation of the given
+        label command.
+        Appends the label to filename.funcname
+        Example:
+            Filename: foo.vm
+            Current function: bar
+            Label CYBER --> (foo.bar$CYBER)
+        :param label: label name to declare
+        """
+        filedotfunc_appended_label = self.__appendFileDotFuncToText(label)
+
+    def writeGoto(self, file_appended_label):
         """
         Writes the assembly code that is the translation of the given goto
         command.
-        :param label: The place that we are going to jump to.
+        :param file_appended_label: The place that we are going to jump to.
         """
-
-        # Tests if the jump's destination is in the
-        # current translated function:
-        file_appended_label = self.__appendFilenameToText(label,
-                                                          LABEL_DELIMITER)
-        if file_appended_label[NAME_INDEX] == self.__current_file_name:
-
-            # Preforms an unconditional jump:
-            self.__writeLine(LOAD_A + file_appended_label[LABEL_INDEX])
-            self.__writeLine(A_JUMP)
-
-        else:
-            raise ValueError(UNDEFINED_JUMP_DESTINATION_MSG)
+        self.__writeLine(LOAD_A + file_appended_label)
+        self.__writeLine(A_JUMP)
 
     def writeIf(self, label):
         """
@@ -383,40 +411,187 @@ class CodeWriter:
                         zero.
         """
         # Pops the value from the top of the stack and compares it to zero
-        file_appended_label = self.__appendFilenameToText(label, LABEL_DELIMITER)
-        self.__writePop(VM_TEMP_SEG, INDEX_0)           # Pop --> temp
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)     # @temp
-        self.__writeLine(D_REG + ASSIGN + M_REG)        # D = RAM[temp]
+        file_appended_label = self.__appendFilenameToText(label)
+        self.__writePop(VM_TEMP_SEG, INDEX_0)  # Pop --> temp
+        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)  # @temp
+        self.__writeLine(D_REG + ASSIGN + M_REG)  # D = RAM[temp]
         self.__writeLine(LOAD_A + file_appended_label)  # @filename$label
-        self.__writeLine(A_NE)                          # Jump if D != 0
+        self.__writeLine(A_NE)  # Jump if D != 0
+
+    def __writePushSegmentAddress(self, segmentName):
+        """
+        writes the assembly code that pushes the address of the given
+        segment to the stack.
+        :param segmentName:
+        :return:
+        Example:
+            LCL      = [ 1 ]
+            RAM[LCL] = [300]
+            writePushSegmentAddress(VM_LCL_SEG)
+            --> pushes [300], because RAM[LCL] = 300
+        """
+        if segmentName not in {VM_THAT_SEG, VM_THIS_SEG, VM_LCL_SEG,
+                               VM_ARG_SEG}:
+            raise ValueError("Segment not supported")
+
+        segmentAddress = VM_SEGMENT_2_ADDRESS[segmentName]
+        self.__writeLine(LOAD_A + segmentAddress)  # @SEG
+        self.__writeLine(D_REG + ASSIGN + M_REG)  # @D = RAM[SEG]
+        self.__writePushDREG()
+
+    def __writePopSegmentAddress(self, segmentName):
+        """
+        writes the assembly code that pushes the address of the given
+        segment to the stack.
+        :param segmentName:
+        :return:
+        Example:
+            LCL      = [ 1 ]
+            RAM[LCL] = [300]
+            writePushSegmentAddress(VM_LCL_SEG)
+            --> pushes [300], because RAM[LCL] = 300
+        """
+        if segmentName not in {VM_THAT_SEG, VM_THIS_SEG, VM_LCL_SEG,
+                               VM_ARG_SEG}:
+            raise ValueError("Segment not supported")
+        segmentAddress = VM_SEGMENT_2_ADDRESS[segmentName]
+        self.__writePopDREG()  # D=STACK[top]
+        self.__writeLine(LOAD_A + segmentAddress)  # @SEG
+        self.__writeLine(M_REG + ASSIGN + D_REG)  # RAM[SEG]=D
+
+    def __writePushDREG(self):
+        """
+        Pushes the value in D_REG to the stack
+        """
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)  # @SP
+        self.__writeLine(A_REG + ASSIGN + M_REG)  # A=M
+        self.__writeLine(M_REG + ASSIGN + D_REG)  # M=D
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)  # @SP
+        self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)  # SP=SP+1
+
+    def __writePopDREG(self):
+        """
+        Pops the value from the stack to D_REG
+        """
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)  # @SP
+        self.__writeLine(A_REG + ASSIGN + M_REG)  # A=M
+        self.__writeLine(D_REG + ASSIGN + M_REG)  # D=M
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)  # @SP
+        self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)  # SP=SP-1
 
     def writeCall(self, functionName, numArgs):
         """
         Writes the assembly code that is the translation of the given Call
         command.
-        :param functionName:
-        :param numArgs:
-        :return:
+        :param functionName: filename-attached-label of the function to call
+        :param numArgs: number of arguments in the stack before the function
+                        was called
         """
-        pass
+        # Push return address
+        unique_label = self.__uniqueLabel(RETURN_LABEL)
+        file_appended_unique_label = self.__appendFilenameToText(unique_label)
+        self.__writeLine(LOAD_A + file_appended_unique_label)  # @return_addr
+        self.__writeLine(D_REG + ASSIGN + A_REG)  # D=A
+        self.__writePushDREG()
+
+        # Push LCL
+        self.__writePushSegmentAddress(VM_LCL_SEG)
+
+        # Push ARG
+        self.__writePushSegmentAddress(VM_ARG_SEG)
+
+        # Push THIS
+        self.__writePushSegmentAddress(VM_THIS_SEG)
+
+        # Push THAT
+        self.__writePushSegmentAddress(VM_THAT_SEG)
+
+        # ARG = SP-(n+5)
+        # Push SP
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
+        self.__writeLine(D_REG + ASSIGN + M_REG)
+        self.__writePushDREG()
+        # Push n+5
+        self.__writePush(VM_CONSTANT_SEG, (int(numArgs) +
+                                           NUM_OF_PUSHED_SEGMENTS))
+        # sub
+        self.writeArithmetic(A_SUB)
+        # pop --> ARG
+        self.__writePop(VM_ARG_SEG, INDEX_0)
+        # LCL = SP
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)
+        self.__writeLine(D_REG + ASSIGN + M_REG)
+        self.__writeLine(LOAD_A + LCL_SEG_ALIAS)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+        # goto f
+        self.writeGoto(functionName)
+
+        # Label return address after method call
+        self.writeLabel(unique_label)
 
     def writeReturn(self):
         """
         Writes the assembly code that is the slation of the given Return
         command.
-        :return:
         """
-        pass
+        # FRAME = LCL
+        self.__writeLine(LOAD_A + LCL_SEG_ALIAS)            # @LCL
+        self.__writeLine(D_REG + ASSIGN + M_REG)            # D=M
+        self.__writeLine(LOAD_A + VAR_FRAME)                  # @FRAME
+        self.__writeLine(M_REG + ASSIGN + D_REG)            # M=D
+
+        # RET = FRAME-5
+        # Push FRAME
+        self.__writeLine(D_REG + ASSIGN + M_REG)
+        self.__writePushDREG()
+        # Push 5
+        self.__writePush(VM_CONSTANT_SEG, NUM_OF_PUSHED_SEGMENTS)
+        # sub
+        self.writeArithmetic(A_SUB)
+        # pop (FRAME-5) --> D_REG
+        self.__writePopDREG()
+        # RET = *(FRAME-5)
+        self.__writeLine(A_REG + ASSIGN + D_REG) # A =  (FRAME-5)
+        self.__writeLine(D_REG + ASSIGN + M_REG) # D = *(FRAME-5)
+        self.__writeLine(LOAD_A + VAR_RET)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+
+        # *ARG = pop()
+        self.__writeLine(LOAD_A + ARG_SEG_ALIAS) # A =  ARG
+        self.__writeLine(A_REG + ASSIGN + M_REG) # A = *ARG
+        self.__writePopDREG()                    # D = pop()
+        self.__writeLine(M_REG + ASSIGN + D_REG) # *ARG = D
+
+        # SP = ARG + 1
+        self.__writeLine(LOAD_A + ARG_SEG_ALIAS)                # @ARG
+        self.__writeLine(D_REG + ASSIGN +  M_REG + ADD + ONE)   # D=M+1
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)                 # @SP
+        self.__writeLine(M_REG + ASSIGN + D_REG)                # M=D
+
+        # THAT = *(FRAME-1)
+        self.__writeLine(LOAD_A + VAR_FRAME)                    # A=  FRAME
+        self.__writeLine(A_REG + ASSIGN + M_REG + SUB + ONE)    # A= (*FRAME-1)
+        self.__writeLine(D_REG + ASSIGN + M_REG)                # D=*(*FRAME-1)
+        self.__writeLine(LOAD_A + THAT_SEG_ALIAS)               # A=THAT
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+
+
+
+        # THIS = *(FRAM-2)
 
     def writeFunction(self, functionName, numLocals):
         """
         Writes the assembly code that is the trans. of the given Function
         command.
-        :param functionName:
-        :param numLocals:
-        :return:
+        :param functionName: name of the function to declare
+        :param numLocals:   number of arguments pushed to the stack before
+                            calling this function
         """
-        pass
+        self.__current_func_name = functionName
+        self.writeLabel(functionName)
+        for local in range(int(numLocals)):
+            self.__writeLine(D_REG + ASSIGN + ZERO)
+            self.__writePushDREG()
 
 
 def main():

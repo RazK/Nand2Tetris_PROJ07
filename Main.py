@@ -94,6 +94,16 @@ def translate(sources, output):
                         label = parser.arg1()
                         writer.writeIf(label)
 
+                    elif operation == C_CALL:
+                        funcName = parser.arg1()
+                        numArgs = parser.arg2().strip()
+                        writer.writeCall(funcName, numArgs)
+
+                    elif operation == C_FUNCTION:
+                        funcName = parser.arg1()
+                        numArgs = parser.arg2().strip()
+                        writer.writeFunction(funcName, numArgs)
+
                     else:
                         raise ValueError(COMMAND_NOT_YET_IMPLEMENTED)
 
