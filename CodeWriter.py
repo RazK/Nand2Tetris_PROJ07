@@ -394,13 +394,14 @@ class CodeWriter:
         """
         filedotfunc_appended_label = self.__appendFileDotFuncToText(label)
 
-    def writeGoto(self, file_appended_label):
+    def writeGoto(self, label):
         """
         Writes the assembly code that is the translation of the given goto
         command.
-        :param file_appended_label: The place that we are going to jump to.
+        :param label: The place that we are going to jump to, assuming it
+                      exists in the current file.
         """
-        self.__writeLine(LOAD_A + file_appended_label)
+        self.__writeLine(LOAD_A + self.__appendFilenameToText(label))
         self.__writeLine(A_JUMP)
 
     def writeIf(self, label):
@@ -524,10 +525,47 @@ class CodeWriter:
         self.__writeLine(LOAD_A + LCL_SEG_ALIAS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
         # goto f
-        self.writeGoto(functionName)
+        self.writeGoto(self.unattachFileName(functionName))
 
         # Label return address after method call
         self.writeLabel(unique_label)
+
+    def unattachFileName(self, file_appended_label):
+        """
+        returns the label following the file prefix.
+        Example:
+        file.SomeLabel --> SomeLabel
+        :param file_appended_label:
+        :return: label without prefix
+        """
+        return file_appended_label.split(LABEL_DELIMITER)[1]
+
+    def saveAToTemp(self):
+        """
+        Saves The contentnts of the A register to Temp0
+        """
+        self.__writeLine(D_REG + ASSIGN + A_REG)
+        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+        self.__writeLine(A_REG + ASSIGN + D_REG)
+
+    def loadAFromTemp(self):
+        """
+        Loads the current value in temp0 to A.
+        """
+        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
+        self.__writeLine(A_REG + ASSIGN + M_REG)
+
+    def __restorSegment(self, vm_seg_name):
+        """
+        Restores the relevant segment to it's previous state before the call.
+        """
+        self.__writeLine(A_REG + ASSIGN + A_REG + NEG_ONE)
+        self.saveAToTemp()
+        self.__writeLine(D_REG + ASSIGN + M_REG)
+        self.__writeLine(LOAD_A + vm_seg_name)
+        self.__writeLine(M_REG + ASSIGN + D_REG)
+        self.loadAFromTemp()
 
     def writeReturn(self):
         """
@@ -535,45 +573,63 @@ class CodeWriter:
         command.
         """
         # FRAME = LCL
-        self.__writeLine(LOAD_A + LCL_SEG_ALIAS)            # @LCL
-        self.__writeLine(D_REG + ASSIGN + M_REG)            # D=M
-        self.__writeLine(LOAD_A + VAR_FRAME)                  # @FRAME
-        self.__writeLine(M_REG + ASSIGN + D_REG)            # M=D
+        self.__writeLine(LOAD_A + LCL_SEG_ALIAS)  # @LCL
+        self.__writeLine(D_REG + ASSIGN + M_REG)  # D=M
+        self.__writeLine(LOAD_A + VAR_FRAME)  # @FRAME
+        self.__writeLine(M_REG + ASSIGN + D_REG)  # M=D
 
-        # RET = FRAME-5
+        # RET = *(*FRAME-5)
         # Push FRAME
-        self.__writeLine(D_REG + ASSIGN + M_REG)
-        self.__writePushDREG()
+        self.__writeLine(LOAD_A + VAR_FRAME)     # A = FRAME
+        self.__writeLine(D_REG + ASSIGN + M_REG) # D = *FRAME
+        self.__writePushDREG() # Push(*FRAME)
         # Push 5
         self.__writePush(VM_CONSTANT_SEG, NUM_OF_PUSHED_SEGMENTS)
         # sub
         self.writeArithmetic(A_SUB)
-        # pop (FRAME-5) --> D_REG
+
+
+
+      #  pop (*FRAME-5) --> D_REG
         self.__writePopDREG()
-        # RET = *(FRAME-5)
-        self.__writeLine(A_REG + ASSIGN + D_REG) # A =  (FRAME-5)
-        self.__writeLine(D_REG + ASSIGN + M_REG) # D = *(FRAME-5)
+      #  RET = *(*FRAME-5)
+        self.__writeLine(A_REG + ASSIGN + D_REG)  # A =  (*FRAME-5)
+        self.__writeLine(D_REG + ASSIGN + M_REG)  # D = *(*FRAME-5)
         self.__writeLine(LOAD_A + VAR_RET)
-        self.__writeLine(M_REG + ASSIGN + D_REG)
+        self.__writeLine(M_REG + ASSIGN + D_REG)  # *RET = *(*FRAME-5)
 
         # *ARG = pop()
-        self.__writeLine(LOAD_A + ARG_SEG_ALIAS) # A =  ARG
-        self.__writeLine(A_REG + ASSIGN + M_REG) # A = *ARG
-        self.__writePopDREG()                    # D = pop()
-        self.__writeLine(M_REG + ASSIGN + D_REG) # *ARG = D
+        self.__writeLine(LOAD_A + ARG_SEG_ALIAS)  # A =  ARG
+        self.__writeLine(A_REG + ASSIGN + M_REG)  # A = *ARG
+        self.__writePopDREG()  # D = pop()
+        self.__writeLine(M_REG + ASSIGN + D_REG)  # *ARG = D
 
         # SP = ARG + 1
-        self.__writeLine(LOAD_A + ARG_SEG_ALIAS)                # @ARG
-        self.__writeLine(D_REG + ASSIGN +  M_REG + ADD + ONE)   # D=M+1
-        self.__writeLine(LOAD_A + SP_SEG_ALIAS)                 # @SP
-        self.__writeLine(M_REG + ASSIGN + D_REG)                # M=D
+        self.__writeLine(LOAD_A + ARG_SEG_ALIAS)  # @ARG
+        self.__writeLine(D_REG + ASSIGN + M_REG + ADD + ONE)  # D=M+1
+        self.__writeLine(LOAD_A + SP_SEG_ALIAS)  # @SP
+        self.__writeLine(M_REG + ASSIGN + D_REG)  # M=D
+
+        # Restores the values of THIS, THAT, ARG, LCL:
+        self.__writeLine(LOAD_A + VAR_FRAME)
+        self.__writeLine(A_REG + ASSIGN + M_REG)
+
+        self.__restorSegment(ASM_THAT_SEG)
+        self.__restorSegment(ASM_THIS_SEG)
+        self.__restorSegment(ASM_ARG_SEG)
+        self.__restorSegment(ASM_LOCAL_SEG)
+
+        self.__writeLine(LOAD_A + VAR_RET)
+        self.__writeLine(A_REG + ASSIGN + M_REG)
+        self.__writeLine(A_JUMP)
 
         # THAT = *(FRAME-1)
-        self.__writeLine(LOAD_A + VAR_FRAME)                    # A=  FRAME
-        self.__writeLine(A_REG + ASSIGN + M_REG + SUB + ONE)    # A= (*FRAME-1)
-        self.__writeLine(D_REG + ASSIGN + M_REG)                # D=*(*FRAME-1)
-        self.__writeLine(LOAD_A + THAT_SEG_ALIAS)               # A=THAT
-        self.__writeLine(M_REG + ASSIGN + D_REG)
+        # self.__writeLine(LOAD_A + VAR_FRAME)                    # A=  FRAME
+        # self.__writeLine(A_REG + ASSIGN + M_REG + SUB + ONE)    # A= (*FRAME-1)
+        # self.__writeLine(D_REG + ASSIGN + M_REG)                # D=*(*FRAME-1)
+        # self.__writeLine(LOAD_A + THAT_SEG_ALIAS)               # A=THAT
+        # self.__writeLine(M_REG + ASSIGN + D_REG)
+
 
 
 
@@ -583,12 +639,12 @@ class CodeWriter:
         """
         Writes the assembly code that is the trans. of the given Function
         command.
-        :param functionName: name of the function to declare
+        :param functionName: file-appended name of the function to declare
         :param numLocals:   number of arguments pushed to the stack before
                             calling this function
         """
         self.__current_func_name = functionName
-        self.writeLabel(functionName)
+        self.__writeLine(declareLabel(functionName))
         for local in range(int(numLocals)):
             self.__writeLine(D_REG + ASSIGN + ZERO)
             self.__writePushDREG()
