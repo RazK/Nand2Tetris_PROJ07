@@ -366,10 +366,12 @@ class CodeWriter:
         # current translated function:
         file_appended_label = self.__appendFilenameToText(label,
                                                           LABEL_DELIMITER)
-        if file_appended_label[NAME_INDEX] == self.__current_file_name:
+        label_base = file_appended_label.split(LABEL_DELIMITER)[0]
+        file_base = self.__current_file_name.split(EXTENSION_DELIMITER)[0]
+        if label_base == file_base:
 
             # Preforms an unconditional jump:
-            self.__writeLine(LOAD_A + file_appended_label[LABEL_INDEX])
+            self.__writeLine(LOAD_A + file_appended_label)
             self.__writeLine(A_JUMP)
 
         else:
