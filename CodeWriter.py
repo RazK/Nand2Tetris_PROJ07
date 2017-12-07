@@ -3,7 +3,7 @@ from Utils import *
 STATIC_VAR_NAME = "var"
 NAME_INDEX = 0
 LABEL_INDEX = 1
-SYS_INIT = "sys.init"
+SYS_INIT = "Sys.init"
 SYS_NUM_ARG = 0
 
 
@@ -17,6 +17,7 @@ class CodeWriter:
         self.__unique_id = 0
         self.__current_file_name = None
         self.__current_func_name = None
+        self.__nowDeclaringFunction = False
 
     def setFileName(self, file_name):
         # TODO: RazK, Noy: Decide on a naming convention for methods,
@@ -228,23 +229,19 @@ class CodeWriter:
         base = self.__current_file_name.split(EXTENSION_DELIMITER)[0]
         return "{}{}{}".format(base, LABEL_DELIMITER, text)
 
-    def __appendFileDotFuncToText(self, text):
+    def __appendFuncDollarToText(self, text):
         """
-        Appends the name of the current 'filename.function' before the given
+        Appends the name of the current function + $ before the given
         text.
         Example:
-            Filename = "Foo.vm"
-            Function = "bar"
-            __appendFilenameToText("CYBER") --> "Foo.bar$CYBER"
+            Function = "sys.bar"
+            __appendFilenameToText("CYBER") --> "sys.bar$CYBER"
         :param text: inner label
         :return: the name of the variable appended with the current
         filename.function
         """
-        # Extract the filename without the extension
-        base = self.__current_file_name.split(EXTENSION_DELIMITER)[0]
-        func = self.__current_func_name.split()
-        return "{}{}{}{}{}".format(base, FUNCTION_DELIMITER, func,
-                                   INNER_LABEL_DELIMITER, text)
+        func = self.__current_func_name
+        return "{}{}{}".format(func, INNER_LABEL_DELIMITER, text)
 
     def __isNegative(self):
         """
@@ -374,45 +371,33 @@ class CodeWriter:
         label command.
         Appends the label to filename
         Example:
-            Filename: foo.vm
-            Label CYBER --> (foo.CYBER)
-        :param label: label name to declare
-        """
-        file_appended_label = self.__appendFilenameToText(label)
-        self.__writeLine(declareLabel(file_appended_label))
-
-    def writeInnerLabel(self, label):
-        """
-        Writes the assembly code that is the translation of the given
-        label command.
-        Appends the label to filename.funcname
-        Example:
-            Filename: foo.vm
-            Current function: bar
+            FuncName: foo.bar
             Label CYBER --> (foo.bar$CYBER)
         :param label: label name to declare
         """
-        filedotfunc_appended_label = self.__appendFileDotFuncToText(label)
+        dest = label
+        if (self.__current_func_name != None):
+            dest = self.__appendFuncDollarToText(label)
+        self.__writeLine(declareLabel(dest))
 
-    def writeGoto(self, label):
+    def writeGoto(self, file_appended_label):
         """
         Writes the assembly code that is the translation of the given goto
         command.
-        :param label: The place that we are going to jump to, assuming it
-                      exists in the current file.
+        :param file_appended_label: The place that we are going to jump to,
+                                    assuming it exists.
         """
-        self.__writeLine(LOAD_A + self.__appendFilenameToText(label))
+        self.__writeLine(LOAD_A + file_appended_label)
         self.__writeLine(A_JUMP)
 
-    def writeIf(self, label):
+    def writeIf(self, file_appended_label):
         """
         Writes the assembly code that is the translation of the given
         if-goto command
-        :param label:   label to jump if the value at the top of the stack is
+        :param file_appended_label:   label to jump if the value at the top of the stack is
                         zero.
         """
         # Pops the value from the top of the stack and compares it to zero
-        file_appended_label = self.__appendFilenameToText(label)
         self.__writePop(VM_TEMP_SEG, INDEX_0)  # Pop --> temp
         self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)  # @temp
         self.__writeLine(D_REG + ASSIGN + M_REG)  # D = RAM[temp]
@@ -474,17 +459,19 @@ class CodeWriter:
         """
         Pops the value from the stack to D_REG
         """
-        self.__writeLine(LOAD_A + SP_SEG_ALIAS)  # @SP
-        self.__writeLine(A_REG + ASSIGN + M_REG)  # A=M
-        self.__writeLine(D_REG + ASSIGN + M_REG)  # D=M
+        self.writeComment("POP DREG")
         self.__writeLine(LOAD_A + SP_SEG_ALIAS)  # @SP
         self.__writeLine(M_REG + ASSIGN + M_REG + SUB + ONE)  # SP=SP-1
+        self.__writeLine(A_REG + ASSIGN + M_REG)  # A=M
+        self.__writeLine(D_REG + ASSIGN + M_REG)  # D=M
+        self.writeComment("POP DREG finish")
 
-    def writeCall(self, functionName, numArgs):
+    def writeCall(self, fileAppendedFuncName, numArgs):
         """
         Writes the assembly code that is the translation of the given Call
         command.
-        :param functionName: filename-attached-label of the function to call
+        :param fileAppendedFuncName: filename-attached-label of the function to
+                                     call
         :param numArgs: number of arguments in the stack before the function
                         was called
         """
@@ -525,12 +512,13 @@ class CodeWriter:
         self.__writeLine(LOAD_A + LCL_SEG_ALIAS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
         # goto f
-        self.writeGoto(self.unattachFileName(functionName))
+        self.__writeLine(LOAD_A + fileAppendedFuncName)
+        self.__writeLine(A_JUMP)
 
         # Label return address after method call
         self.writeLabel(unique_label)
 
-    def unattachFileName(self, file_appended_label):
+    def StripFileName(self, file_appended_label):
         """
         returns the label following the file prefix.
         Example:
@@ -580,29 +568,29 @@ class CodeWriter:
 
         # RET = *(*FRAME-5)
         # Push FRAME
-        self.__writeLine(LOAD_A + VAR_FRAME)     # A = FRAME
-        self.__writeLine(D_REG + ASSIGN + M_REG) # D = *FRAME
-        self.__writePushDREG() # Push(*FRAME)
+        self.__writeLine(LOAD_A + VAR_FRAME)  # A = FRAME
+        self.__writeLine(D_REG + ASSIGN + M_REG)  # D = *FRAME
+        self.__writePushDREG()  # Push(*FRAME)
         # Push 5
         self.__writePush(VM_CONSTANT_SEG, NUM_OF_PUSHED_SEGMENTS)
         # sub
         self.writeArithmetic(A_SUB)
 
-
-
-      #  pop (*FRAME-5) --> D_REG
+        #  pop (*FRAME-5) --> D_REG
         self.__writePopDREG()
-      #  RET = *(*FRAME-5)
+        #  RET = *(*FRAME-5)
         self.__writeLine(A_REG + ASSIGN + D_REG)  # A =  (*FRAME-5)
         self.__writeLine(D_REG + ASSIGN + M_REG)  # D = *(*FRAME-5)
         self.__writeLine(LOAD_A + VAR_RET)
         self.__writeLine(M_REG + ASSIGN + D_REG)  # *RET = *(*FRAME-5)
 
         # *ARG = pop()
+        self.writeComment("OOOPPPPOOO")
+        self.__writePopDREG()  # D = pop()
         self.__writeLine(LOAD_A + ARG_SEG_ALIAS)  # A =  ARG
         self.__writeLine(A_REG + ASSIGN + M_REG)  # A = *ARG
-        self.__writePopDREG()  # D = pop()
         self.__writeLine(M_REG + ASSIGN + D_REG)  # *ARG = D
+        self.writeComment("OOOPPPPOOO out madafaka")
 
         # SP = ARG + 1
         self.__writeLine(LOAD_A + ARG_SEG_ALIAS)  # @ARG
@@ -639,7 +627,7 @@ class CodeWriter:
         """
         Writes the assembly code that is the trans. of the given Function
         command.
-        :param functionName: file-appended name of the function to declare
+        :param functionName: NON file-appended name of the function to declare
         :param numLocals:   number of arguments pushed to the stack before
                             calling this function
         """
@@ -648,6 +636,15 @@ class CodeWriter:
         for local in range(int(numLocals)):
             self.__writeLine(D_REG + ASSIGN + ZERO)
             self.__writePushDREG()
+
+    def labelWize(self, label):
+        """
+        If no current function: label
+        If current function but not declaring function: file.function$label
+        If current function and declaring function: file.label
+        :param label:
+        :return: decorated label acording to current state
+        """
 
 
 def main():
