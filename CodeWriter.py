@@ -67,7 +67,7 @@ class CodeWriter:
             # refer segment + index to the emulated memory
             self.__writeLine(LOAD_A + OUR_TEMP_0_ADDRESS)
 
-        elif vm_segment_name in [VM_FUNCTION_TEMP_SEG, VM_POINTER_SEG]:
+        elif vm_segment_name in [VM_OUR_TEMP_SEG, VM_FUNCTION_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
             seg_addr = VM_SEGMENT_2_ADDRESS[vm_segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
@@ -113,7 +113,7 @@ class CodeWriter:
             raise ValueError(POP_FROM_CONSTANT_MSG)
 
         # Save pop destination address in A
-        elif vm_segment_name in [VM_FUNCTION_TEMP_SEG, VM_POINTER_SEG]:
+        elif vm_segment_name in [VM_OUR_TEMP_SEG, VM_FUNCTION_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
             seg_addr = VM_SEGMENT_2_ADDRESS[vm_segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
