@@ -477,8 +477,7 @@ class CodeWriter:
         """
         # Push return address
         unique_label = self.__uniqueLabel(RETURN_LABEL)
-        file_appended_unique_label = self.__appendFilenameToText(unique_label)
-        self.__writeLine(LOAD_A + file_appended_unique_label)  # @return_addr
+        self.__writeLine(LOAD_A + unique_label)   # @return_addr
         self.__writeLine(D_REG + ASSIGN + A_REG)  # D=A
         self.__writePushDREG()
 
