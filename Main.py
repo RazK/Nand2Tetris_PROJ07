@@ -56,7 +56,7 @@ def translate(sources, output):
         writer = CodeWriter(out)
 
         # Init
-#        writer.writeInit()
+        writer.writeInit()
 
         # Parse each source and translate to it the output
         for sourcefile in sources:
