@@ -467,6 +467,7 @@ class CodeWriter:
         self.__writeLine(M_REG + ASSIGN + D_REG)  # M=D
         self.__writeLine(LOAD_A + SP_SEG_ALIAS)  # @SP
         self.__writeLine(M_REG + ASSIGN + M_REG + ADD + ONE)  # SP=SP+1
+        self.__stackSize += 1
 
     def __writePopDREG(self):
         """
@@ -478,6 +479,7 @@ class CodeWriter:
         self.__writeLine(A_REG + ASSIGN + M_REG)  # A=M
         self.__writeLine(D_REG + ASSIGN + M_REG)  # D=M
         self.writeComment("POP DREG finish")
+        self.__stackSize -= 1
 
     def writeCall(self, fileAppendedFuncName, numArgs):
         """
