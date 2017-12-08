@@ -210,9 +210,8 @@ class CodeWriter:
         :param label: label to localize
         :return: Given label with a unique identifier.
         """
-        unique_label = "{}{}{}".format(self.__unique_id,
-                                       UNIQUE_DELIMITER,
-                                       label)
+        unique_label = "{}{}{}".format(label, UNIQUE_DELIMITER,
+                                       self.__unique_id)
         self.__unique_id += 1
         return unique_label
 
@@ -365,6 +364,20 @@ class CodeWriter:
         # Calls sys.init:
         self.writeCall(SYS_INIT, SYS_NUM_ARG)
 
+    def __writeLoadLabel(self, label):
+        """
+        Loads the given label in correct file-appending mode
+        Example:
+            (Not in function)
+            __writeLoadLabel("CYBER") --> @CYBER
+            (In function Foo in file Xxx)
+            __writeLoadLabel("CYBER") --> Xxx.Foo@CYBER
+        """
+        dest = label
+        if (self.__current_func_name != None):
+            dest = self.__appendFuncDollarToText(label)
+        self.__writeLine(LOAD_A + dest)
+
     def writeLabel(self, label):
         """
         Writes the assembly code that is the translation of the given
@@ -380,28 +393,28 @@ class CodeWriter:
             dest = self.__appendFuncDollarToText(label)
         self.__writeLine(declareLabel(dest))
 
-    def writeGoto(self, file_appended_label):
+    def writeGoto(self, label):
         """
         Writes the assembly code that is the translation of the given goto
         command.
-        :param file_appended_label: The place that we are going to jump to,
+        :param label: The place that we are going to jump to,
                                     assuming it exists.
         """
-        self.__writeLine(LOAD_A + file_appended_label)
+        self.__writeLoadLabel(label)
         self.__writeLine(A_JUMP)
 
-    def writeIf(self, file_appended_label):
+    def writeIf(self, label):
         """
         Writes the assembly code that is the translation of the given
         if-goto command
-        :param file_appended_label:   label to jump if the value at the top of the stack is
+        :param label:   label to jump if the value at the top of the stack is
                         zero.
         """
         # Pops the value from the top of the stack and compares it to zero
         self.__writePop(VM_TEMP_SEG, INDEX_0)  # Pop --> temp
         self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)  # @temp
         self.__writeLine(D_REG + ASSIGN + M_REG)  # D = RAM[temp]
-        self.__writeLine(LOAD_A + file_appended_label)  # @filename$label
+        self.__writeLoadLabel(label)
         self.__writeLine(A_NE)  # Jump if D != 0
 
     def __writePushSegmentAddress(self, segmentName):
@@ -477,7 +490,7 @@ class CodeWriter:
         """
         # Push return address
         unique_label = self.__uniqueLabel(RETURN_LABEL)
-        self.__writeLine(LOAD_A + unique_label)   # @return_addr
+        self.__writeLoadLabel(unique_label)
         self.__writeLine(D_REG + ASSIGN + A_REG)  # D=A
         self.__writePushDREG()
 
