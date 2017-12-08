@@ -65,9 +65,9 @@ class CodeWriter:
         if vm_segment_name in [VM_CONSTANT_SEG]:
             self.__saveValueInTemp(index)
             # refer segment + index to the emulated memory
-            self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
+            self.__writeLine(LOAD_A + OUR_TEMP_0_ADDRESS)
 
-        elif vm_segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
+        elif vm_segment_name in [VM_FUNCTION_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
             seg_addr = VM_SEGMENT_2_ADDRESS[vm_segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
@@ -113,7 +113,7 @@ class CodeWriter:
             raise ValueError(POP_FROM_CONSTANT_MSG)
 
         # Save pop destination address in A
-        elif vm_segment_name in [VM_TEMP_SEG, VM_POINTER_SEG]:
+        elif vm_segment_name in [VM_FUNCTION_TEMP_SEG, VM_POINTER_SEG]:
             # Statically find address
             seg_addr = VM_SEGMENT_2_ADDRESS[vm_segment_name]
             self.__writeLine(LOAD_A + str(int(seg_addr) + int(index)))
@@ -128,7 +128,7 @@ class CodeWriter:
 
         # Keep destination in temp
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)
+        self.__writeLine(LOAD_A + OUR_TEMP_SEG_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
         # Decrements SP and extracts the topmost value of the stack to D:
@@ -139,7 +139,7 @@ class CodeWriter:
         self.__stackSize -= 1
 
         # Write the popped value (in D) to the destination (in temp)
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)
+        self.__writeLine(LOAD_A + OUR_TEMP_SEG_ADDRESS)
         self.__writeLine(A_REG + ASSIGN + M_REG)
         self.__writeLine(M_REG + ASSIGN + D_REG)
 
@@ -262,14 +262,14 @@ class CodeWriter:
         self.__writeBinary(SUB)
 
         # Keeps the result in Temp 0 segment:
-        self.__writePop(VM_TEMP_SEG, INDEX_0)
+        self.__writePop(VM_OUR_TEMP_SEG, INDEX_0)
 
         # Initializes Temp 1 to be 0:
-        self.__writeLine(LOAD_A + TEMP_1_ADDRESS)
+        self.__writeLine(LOAD_A + OUR_TEMP_1_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + ZERO)
 
         # Initializes D with the Subtraction result:
-        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
+        self.__writeLine(LOAD_A + OUR_TEMP_0_ADDRESS)
         self.__writeLine(D_REG + ASSIGN + M_REG)
 
         # If the comparision result is T, changes temp 1 to "-1":
@@ -282,12 +282,12 @@ class CodeWriter:
         self.__writeLine(LOAD_A + FALSE_LABEL)
         self.__writeLine(A_JUMP)
         self.__writeLine(declareLabel(TRUE_LABEL))
-        self.__writeLine(LOAD_A + TEMP_1_ADDRESS)
+        self.__writeLine(LOAD_A + OUR_TEMP_1_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + NEG_ONE)
         self.__writeLine(declareLabel(FALSE_LABEL))
 
         # Pushes the result back to the stack:
-        self.__writePush(VM_TEMP_SEG, INDEX_1)
+        self.__writePush(VM_OUR_TEMP_SEG, INDEX_1)
 
     def writeArithmetic(self, operation):
         """
@@ -322,7 +322,7 @@ class CodeWriter:
         safe_value = str(value)
         self.__writeLine(LOAD_A + safe_value)
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
+        self.__writeLine(LOAD_A + OUR_TEMP_0_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
         pass
 
@@ -411,8 +411,8 @@ class CodeWriter:
                         zero.
         """
         # Pops the value from the top of the stack and compares it to zero
-        self.__writePop(VM_TEMP_SEG, INDEX_0)  # Pop --> temp
-        self.__writeLine(LOAD_A + TEMP_SEG_ADDRESS)  # @temp
+        self.__writePop(VM_OUR_TEMP_SEG, INDEX_0)  # Pop --> temp
+        self.__writeLine(LOAD_A + OUR_TEMP_SEG_ADDRESS)  # @temp
         self.__writeLine(D_REG + ASSIGN + M_REG)  # D = RAM[temp]
         self.__writeLoadLabel(label)
         self.__writeLine(A_NE)  # Jump if D != 0
@@ -547,7 +547,7 @@ class CodeWriter:
         Saves The contentnts of the A register to Temp0
         """
         self.__writeLine(D_REG + ASSIGN + A_REG)
-        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
+        self.__writeLine(LOAD_A + OUR_TEMP_0_ADDRESS)
         self.__writeLine(M_REG + ASSIGN + D_REG)
         self.__writeLine(A_REG + ASSIGN + D_REG)
 
@@ -555,7 +555,7 @@ class CodeWriter:
         """
         Loads the current value in temp0 to A.
         """
-        self.__writeLine(LOAD_A + TEMP_0_ADDRESS)
+        self.__writeLine(LOAD_A + OUR_TEMP_0_ADDRESS)
         self.__writeLine(A_REG + ASSIGN + M_REG)
 
     def __restorSegment(self, vm_seg_name):
