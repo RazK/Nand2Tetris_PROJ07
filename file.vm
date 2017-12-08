@@ -1,11 +1,13 @@
-push constant 1234
-neg
-push constant 5555
-push constant 4444
-lt
-push constant -1234
-push constant -5678
-lt
-push constant -5678
-push constant -1234
-lt
+push constant 1
+push constant 2
+push constant 3
+call file.noy 3
+
+push constant 444
+goto END // skip noy definition
+
+function file.noy 3
+push constant 666
+return
+
+label END

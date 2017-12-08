@@ -55,6 +55,9 @@ def translate(sources, output):
     with open(output, 'w') as out:
         writer = CodeWriter(out)
 
+        # Init
+        writer.writeInit()
+
         # Parse each source and translate to it the output
         for sourcefile in sources:
 
@@ -103,6 +106,10 @@ def translate(sources, output):
                         funcName = parser.arg1()
                         numArgs = parser.arg2().strip()
                         writer.writeFunction(funcName, numArgs)
+
+                    elif operation == C_RETURN:
+                        writer.writeReturn()
+
 
                     else:
                         raise ValueError(COMMAND_NOT_YET_IMPLEMENTED)
